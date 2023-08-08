@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>Chapter 9 Stochastic Treatment Regimes | Targeted Learning in R</title>
+<meta name="author" content="Mark van der Laan, Jeremy Coyle, Nima Hejazi, Ivana Malenica, Rachael Phillips, Alan Hubbard">
+<meta name="description" content="Nima Hejazi Featuring the tmle3shift R package.  Learning Objectives Differentiate stochastic treatment regimes from static, dynamic, and optimal dynamic treatment regimes. Describe how a...">
+<meta name="generator" content="bookdown 0.34.2 with bs4_book()">
+<meta property="og:title" content="Chapter 9 Stochastic Treatment Regimes | Targeted Learning in R">
+<meta property="og:type" content="book">
+<meta property="og:url" content="https://tlverse.org/tlverse-handbook/shift.html">
+<meta property="og:description" content="Nima Hejazi Featuring the tmle3shift R package.  Learning Objectives Differentiate stochastic treatment regimes from static, dynamic, and optimal dynamic treatment regimes. Describe how a...">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Chapter 9 Stochastic Treatment Regimes | Targeted Learning in R">
+<meta name="twitter:site" content="@tlverse">
+<meta name="twitter:description" content="Nima Hejazi Featuring the tmle3shift R package.  Learning Objectives Differentiate stochastic treatment regimes from static, dynamic, and optimal dynamic treatment regimes. Describe how a...">
+<!-- JS --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://kit.fontawesome.com/6ecbd6c532.js" crossorigin="anonymous"></script><script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="libs/bootstrap-4.6.0/bootstrap.min.css" rel="stylesheet">
+<script src="libs/bootstrap-4.6.0/bootstrap.bundle.min.js"></script><script src="libs/bs3compat-0.3.1/transition.js"></script><script src="libs/bs3compat-0.3.1/tabs.js"></script><script src="libs/bs3compat-0.3.1/bs3compat.js"></script><link href="libs/bs4_book-1.0.0/bs4_book.css" rel="stylesheet">
+<script src="libs/bs4_book-1.0.0/bs4_book.js"></script><script src="libs/kePrint-0.0.1/kePrint.js"></script><link href="libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+<link href="libs/bsTable-3.3.7/bootstrapTable.min.css" rel="stylesheet">
+<script src="libs/bsTable-3.3.7/bootstrapTable.js"></script>
+</head>
+<body>
+<span class="math inline">
+    \(\DeclareMathOperator{\expit}{expit}\)
+    \(\DeclareMathOperator{\logit}{logit}\)
+    \(\DeclareMathOperator*{\argmin}{\arg\!\min}\)
+    \(\newcommand{\indep}{\perp\!\!\!\perp}\)
+    \(\newcommand{\coloneqq}{\mathrel{=}}\)
+    \(\newcommand{\R}{\mathbb{R}}\)
+    \(\newcommand{\E}{\mathbb{E}}\)
+    \(\newcommand{\M}{\mathcal{M}}\)
+    \(\renewcommand{\P}{\mathbb{P}}\)
+    \(\newcommand{\I}{\mathbb{I}}\)
+    \(\newcommand{\1}{\mathbbm{1}}\)
+    </span>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- CSS --><style type="text/css">
+    
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  </style>
+<style type="text/css">
+    /* Used with Pandoc 2.11+ new --citeproc when CSL is used */
+    div.csl-bib-body { }
+    div.csl-entry {
+      clear: both;
+        }
+    .hanging div.csl-entry {
+      margin-left:2em;
+      text-indent:-2em;
+    }
+    div.csl-left-margin {
+      min-width:2em;
+      float:left;
+    }
+    div.csl-right-inline {
+      margin-left:2em;
+      padding-left:1em;
+    }
+    div.csl-indent {
+      margin-left: 2em;
+    }
+  </style>
+<link rel="stylesheet" href="css/style.css">
+<div class="container-fluid">
+<div class="row">
+  <header class="col-sm-12 col-lg-3 sidebar sidebar-book"><a class="sr-only sr-only-focusable" href="#content">Skip to main content</a>
+
+    <div class="d-flex align-items-start justify-content-between">
+      <h1>
+        <a href="index.html" title="Causal Data Science with the tlverse Software Ecosystem">Targeted Learning in R</a>:
+        <small class="text-muted">Causal Data Science with the tlverse Software Ecosystem</small>
+      </h1>
+      <button class="btn btn-outline-primary d-lg-none ml-2 mt-1" type="button" data-toggle="collapse" data-target="#main-nav" aria-expanded="true" aria-controls="main-nav"><i class="fas fa-bars"></i><span class="sr-only">Show table of contents</span></button>
+    </div>
+
+    <div id="main-nav" class="collapse-lg">
+      <form role="search">
+        <input id="search" class="form-control" type="search" placeholder="Search" aria-label="Search">
+</form>
+
+      <nav aria-label="Table of contents"><h2>Table of contents</h2>
+        <ul class="book-toc list-unstyled">
+<li><a class="" href="index.html">Welcome</a></li>
+<li><a class="" href="introduction.html">Introduction</a></li>
+<li class="book-part">Part 1: Preliminaries</li>
+<li><a class="" href="tlverse.html"><span class="header-section-number">1</span> About the tlverse</a></li>
+<li><a class="" href="setup.html"><span class="header-section-number">2</span> Software Setup</a></li>
+<li><a class="" href="example-datasets.html"><span class="header-section-number">3</span> Example Datasets</a></li>
+<li class="book-part">Part 2: Foundations</li>
+<li><a class="" href="roadmap.html"><span class="header-section-number">4</span> Learning from Data: A Roadmap</a></li>
+<li><a class="" href="origami.html"><span class="header-section-number">5</span> Cross-validation</a></li>
+<li><a class="" href="sl3.html"><span class="header-section-number">6</span> Super Learning</a></li>
+<li><a class="" href="tmle3.html"><span class="header-section-number">7</span> The TMLE Framework</a></li>
+<li class="book-part">Part 3: Advanced Topics</li>
+<li><a class="" href="dynamic-and-optimal-individualized-treatment-regimes.html"><span class="header-section-number">8</span> Dynamic and Optimal Individualized Treatment Regimes</a></li>
+<li><a class="active" href="shift.html"><span class="header-section-number">9</span> Stochastic Treatment Regimes</a></li>
+<li><a class="" href="causal-mediation-analysis.html"><span class="header-section-number">10</span> Causal Mediation Analysis</a></li>
+<li><a class="" href="references.html">References</a></li>
+</ul>
+
+        <div class="book-extra">
+          <p><a id="book-repo" href="https://github.com/tlverse/tlverse-handbook">View book source <i class="fab fa-github"></i></a></p>
+        </div>
+      </nav>
+</div>
+  </header><main class="col-sm-12 col-md-9 col-lg-7" id="content"><div id="shift" class="section level1" number="9">
+<h1>
+<span class="header-section-number">9</span> Stochastic Treatment Regimes<a class="anchor" aria-label="anchor" href="#shift"><i class="fas fa-link"></i></a>
+</h1>
+<p><em>Nima Hejazi</em></p>
+<p>Featuring the <a href="https://github.com/tlverse/tmle3shift"><code>tmle3shift</code> <code>R</code> package</a>.</p>
+<div class="infobox tlverse">
+<div class="center">
+<p><strong>Learning Objectives</strong></p>
+</div>
+<ol style="list-style-type: decimal">
+<li>Differentiate stochastic treatment regimes from static, dynamic, and optimal
+dynamic treatment regimes.</li>
+<li>Describe how a real-world data analysis may incorporate assessing the causal
+effects of stochastic treatment regimes.</li>
+<li>Contrast a population-level (general) stochastic treatment regime from an
+(individualized) modified treatment policy.</li>
+<li>Estimate the population-level causal effects of modified treatment policies
+with the <code>tmle3shift</code> <code>R</code> package.</li>
+<li>Specify and interpret a set of causal effects based upon differing modified
+treatment policies arising from a grid of counterfactual shifts.</li>
+<li>Construct marginal structural models to measure variable importance in terms
+of stochastic interventions, using a grid of counterfactual shifts.</li>
+<li>Implement, with the <code>tmle3shift</code> <code>R</code> package, modified treatment policies
+that shift individual units only to the extent supported by the observed
+data.</li>
+</ol>
+</div>
+<div id="why-stochastic-interventions" class="section level2" number="9.1">
+<h2>
+<span class="header-section-number">9.1</span> Why <em>Stochastic</em> Interventions?<a class="anchor" aria-label="anchor" href="#why-stochastic-interventions"><i class="fas fa-link"></i></a>
+</h2>
+<p>Stochastic treatment regimes, or <em>stochastic interventions</em>, constitute a
+relatively simple yet extremely flexible and expressive framework for defining
+<em>realistic</em> causal effects. In contrast to intervention regimens discussed
+previously, stochastic interventions may be applied to nearly any manner of
+treatment variable – binary, ordinal, continuous – allowing for a rich set of
+causal effects to be defined through this formalism. This chapter focuses on
+examining a few types of stochastic interventions that may be applied to
+<em>continuous</em> treatment variables, to which static and dynamic treatment regimes
+cannot easily be applied. Notably, the resultant causal effects conveniently are
+endowed with an interpretation echoing that of ordinary regression adjustment.</p>
+<p>In the next chapter, we will introduce two alternative uses of stochastic
+interventions – a recently formulated intervention applicable to binary
+treatment variables <span class="citation">(<a href="references.html#ref-kennedy2019nonparametric" role="doc-biblioref">Kennedy, 2019</a>)</span> and the definition of causal
+effects in the presence of post-treatment, or mediating, variables. Here, we
+will focus on the tools provided in the <a href="https://github.com/tlverse/tmle3shift"><code>tmle3shift</code> R
+package</a>, which exposes targeted minimum
+loss-based estimators of the causal effects of stochastic interventions that
+additively shift the observed value of the treatment variable. More
+comprehensive, technical presentations of some aspects of the material in this
+chapter appear in <span class="citation">Dı́az and van der Laan (<a href="references.html#ref-diaz2012population" role="doc-biblioref">2012</a>)</span>, <span class="citation">Dı́az and van der Laan (<a href="references.html#ref-diaz2018stochastic" role="doc-biblioref">2018</a>)</span>,
+<span class="citation">Hejazi, van der Laan, <em>et al.</em> (<a href="references.html#ref-hejazi2020efficient" role="doc-biblioref">2020</a>)</span>, and <span class="citation">Hejazi (<a href="references.html#ref-hejazi2021semiparametric" role="doc-biblioref">2021</a>)</span>.</p>
+</div>
+<div id="data-structure-and-notation-1" class="section level2" number="9.2">
+<h2>
+<span class="header-section-number">9.2</span> Data Structure and Notation<a class="anchor" aria-label="anchor" href="#data-structure-and-notation-1"><i class="fas fa-link"></i></a>
+</h2>
+<p>Let us return to the familiar data unit <span class="math inline">\(O = (W, A, Y)\)</span>, where <span class="math inline">\(W\)</span> denote
+baseline covariates (e.g., age, biological sex, education level), <span class="math inline">\(A\)</span> a
+treatment variable (e.g., dose of nutritional supplements), and <span class="math inline">\(Y\)</span> an outcome
+of interest (e.g., disease status). Here, we consider <span class="math inline">\(A\)</span> that are
+continuous-valued (i.e., <span class="math inline">\(A \in \R\)</span>) or ordinal with many levels. For a given
+study, we consider observing <span class="math inline">\(n\)</span> independent and identically distributed units
+<span class="math inline">\(O_1, \ldots, O_n\)</span>.</p>
+<p>Following <a href="roadmap.html#roadmap">the roadmap</a>, let <span class="math inline">\(O \sim P_0 \in \M\)</span>, where <span class="math inline">\(\M\)</span> is the
+nonparametric statistical model, minimizing any restrictions on the form of the
+data-generating distribution <span class="math inline">\(P_0\)</span>. To formalize the definition of stochastic
+interventions and their corresponding causal effects, we introduce a structural
+causal model (SCM), based on <span class="citation">Pearl (<a href="references.html#ref-pearl2009causality" role="doc-biblioref">2009</a>)</span>, to define how the system
+changes under posited interventions:
+<span class="math display" id="eq:npsem-shift">\[\begin{align}
+  W &amp;= f_W(U_W) \\ \nonumber
+  A &amp;= f_A(W, U_A) \\ \nonumber
+  Y &amp;= f_Y(A, W, U_Y).
+  \tag{9.1}
+\end{align}\]</span>
+The set of structural equations provide a mechanistic model describing the
+relationships between variables composing the observed data unit <span class="math inline">\(O\)</span>. The SCM
+describes a temporal ordering between the variables (i.e., that <span class="math inline">\(Y\)</span> occurs after
+<span class="math inline">\(A\)</span>, which occurs after <span class="math inline">\(W\)</span>); specifies deterministic functions <span class="math inline">\(\{f_W, f_A, f_Y\}\)</span> generating each variable <span class="math inline">\(\{W, A, Y\}\)</span> based on those preceding it and
+exogenous (unobserved) variable <span class="math inline">\(\{U_W, U_A, U_Y\}\)</span>; and requires that each
+exogenous variable is assumed to contain all unobserved causes of the
+corresponding observed variable.</p>
+<p>We can factorize the likelihood of the data unit <span class="math inline">\(O\)</span> as follows, revealing
+orthogonal components of the density, <span class="math inline">\(p_0\)</span>, when evaluated on a typical
+observation <span class="math inline">\(o\)</span>:
+<span class="math display" id="eq:likelihood-factorization-shift">\[\begin{align}
+  p_0(o) = &amp;q_{0,Y}(y \mid A = a, W = w) \\ \nonumber
+    &amp;g_{0,A}(a \mid W = w) \\ \nonumber
+    &amp;q_{0,W}(w),\\ \nonumber
+  \tag{9.2}
+\end{align}\]</span>
+where <span class="math inline">\(q_{0, Y}\)</span> is the conditional density of <span class="math inline">\(Y\)</span> given <span class="math inline">\(\{A, W\}\)</span> with respect
+to some dominating measure, <span class="math inline">\(g_{0, A}\)</span> is the conditional density of <span class="math inline">\(A\)</span> given
+<span class="math inline">\(W\)</span> with respect to dominating measure <span class="math inline">\(\mu\)</span>, and <span class="math inline">\(q_{0, W}\)</span> is the density of
+<span class="math inline">\(W\)</span> with respect to dominating measure <span class="math inline">\(\nu\)</span>. In the interest of continuing to
+use familiar notation, we let <span class="math inline">\(\overline{Q}(A, W) = \E[Y \mid A, W]\)</span>, <span class="math inline">\(g(A \mid W) = g_{A}(A \mid W)\)</span>, and <span class="math inline">\(q_W\)</span> the marginal distribution of <span class="math inline">\(W\)</span>. Importantly,
+the SCM parameterizes <span class="math inline">\(p_0\)</span> in terms of the distribution of random variables
+<span class="math inline">\((O, U)\)</span> modeled by the system of equations. In turn, this implies a model for
+the distribution of counterfactual random variables generated by interventions
+on the data-generating process.</p>
+</div>
+<div id="defining-the-causal-effect-of-a-stochastic-intervention" class="section level2" number="9.3">
+<h2>
+<span class="header-section-number">9.3</span> Defining the Causal Effect of a Stochastic Intervention<a class="anchor" aria-label="anchor" href="#defining-the-causal-effect-of-a-stochastic-intervention"><i class="fas fa-link"></i></a>
+</h2>
+<p>Causal effects are defined in terms of contrasts of hypothetical interventions
+on the SCM <a href="shift.html#eq:npsem-shift">(9.1)</a>. Stochastic interventions modifying
+components of the SCM may be thought of in two equivalent ways. A <em>general</em>
+stochastic intervention replaces the equation <span class="math inline">\(f_A\)</span>, which gives rise to <span class="math inline">\(A\)</span>,
+and <span class="math inline">\(g(A \mid W)\)</span>, the natural conditional density of A, with a candidate
+density <span class="math inline">\(g_{A_{\delta}}(A \mid W)\)</span>. In the absence of the intervention, we would
+consider any given value <span class="math inline">\(a \in \mathcal{A}\)</span>, the support of <span class="math inline">\(A\)</span> – that is, the
+result of evaluating the function <span class="math inline">\(f_A\)</span> at a given value <span class="math inline">\(W = w\)</span> – as the
+result of a random draw from the distribution defined by the conditional density
+<span class="math inline">\(g(A \mid W)\)</span>, that is, <span class="math inline">\(A_{\delta} \sim g_{A_{\delta}}(\cdot \mid W)\)</span>. In
+applying the intervention, we simply remove the structural equation <span class="math inline">\(f_A\)</span>,
+instead drawing the post-intervention value <span class="math inline">\(A_{\delta}\)</span> from the distribution
+defined by the candidate density <span class="math inline">\(g_{A_{\delta}}(A \mid W)\)</span>. The
+post-intervention value <span class="math inline">\(A_{\delta}\)</span> is stochastically modified in the sense
+that it has been drawn from an arbitrary (in practice, user-defined)
+distribution. Note that the familiar case of static interventions can be
+recovered by choosing degenerate candidate distributions, which place all mass
+on just a single value. <span class="citation">Stock (<a href="references.html#ref-stock1989nonparametric" role="doc-biblioref">1989</a>)</span> first considered estimating the
+total effects of such stochastic interventions.</p>
+<p>While there are few restrictions on the choice of the candidate post-treatment
+density <span class="math inline">\(g_{A_{\delta}}(A \mid W)\)</span>, in practice, it is often chosen based on
+knowledge of the natural (or pre-intervention) density <span class="math inline">\(g(A \mid W)\)</span>. When
+<span class="math inline">\(g_{A_{\delta}}(A \mid W)\)</span> is <em>piecewise smooth invertible</em> (more below)
+<span class="citation">(<a href="references.html#ref-haneuse2013estimation" role="doc-biblioref">Haneuse and Rotnitzky, 2013</a>)</span>, there is a direct correspondence between the
+post-intervention density <span class="math inline">\(g_{A_{\delta}}(A \mid W)\)</span> and a function <span class="math inline">\(d(A, W; \delta)\)</span> that maps an observed pair <span class="math inline">\(\{A, W\}\)</span> to the post-intervention quantity
+<span class="math inline">\(A_{\delta}\)</span>. In such cases, the stochastic intervention, defined by <span class="math inline">\(d(A, W; \delta)\)</span>, is said to depend on the natural value of treatment and has been
+termed a <em>modified treatment policy</em> (MTP) <span class="citation">(<a href="references.html#ref-diaz2018stochastic" role="doc-biblioref">Dı́az and van der Laan, 2018</a>; <a href="references.html#ref-haneuse2013estimation" role="doc-biblioref">Haneuse and Rotnitzky, 2013</a>; <a href="references.html#ref-hejazi2021semiparametric" role="doc-biblioref">Hejazi, 2021</a>)</span>. <span class="citation">Haneuse and Rotnitzky (<a href="references.html#ref-haneuse2013estimation" role="doc-biblioref">2013</a>)</span> and
+<span class="citation">Young <em>et al.</em> (<a href="references.html#ref-young2014identification" role="doc-biblioref">2014</a>)</span> provide detailed discussions contrasting the
+interpretations of the causal effects under modified treatment policies and
+general stochastic interventions.</p>
+<div class="definition">
+<p><span id="def:unlabeled-div-1" class="definition"><strong>Definition 9.1  (Piecewise Smooth Invertibility) </strong></span>For each <span class="math inline">\(w \in \mathcal{W}\)</span>, assume that the interval <span class="math inline">\(\mathcal{I}(w) = (l(w,), u(w))\)</span> may be partitioned into subintervals <span class="math inline">\(\mathcal{I}_{\delta,j}(w): j = 1, \ldots, J(w)\)</span> such that <span class="math inline">\(d(a, w; \delta)\)</span> is equal to some <span class="math inline">\(d_j(a, w; \delta)\)</span> in <span class="math inline">\(\mathcal{I}_{\delta,j}(w)\)</span> and <span class="math inline">\(d_j(\cdot,w; \delta)\)</span> has inverse
+function <span class="math inline">\(b_j(\cdot, w; \delta)\)</span> with derivative <span class="math inline">\(b_j'(\cdot, w; \delta)\)</span>.</p>
+</div>
+<!-- TODO: explain this
+Essentially, for a given $d(A,W; \delta)$ to exhibit this property, the
+-->
+<p>A stochastic intervention gives rise to a counterfactual random variable
+<span class="math inline">\(Y_{A_{\delta}} := f_Y(A_{\delta}, W, U_Y)\)</span>, where the counterfactual outcome
+<span class="math inline">\(Y_{A_{\delta}} \sim \mathcal{P}_0^{A_{\delta}}\)</span> arises from replacing the
+natural value of <span class="math inline">\(A\)</span> with <span class="math inline">\(A_{\delta}\)</span> (whether as a draw from
+<span class="math inline">\(g_{A_{\delta}}(A \mid W)\)</span> or by evaluating <span class="math inline">\(d(A, W; \delta)\)</span>). For the
+remainder of this chapter, we will focus on additive MTPs of the form
+<span class="math display" id="eq:shift">\[\begin{equation}
+  d(a, w; \delta) =
+  \begin{cases}
+    a + \delta &amp; \text{if } a + \delta \leq u(w) \\
+    a &amp; \text{if } a + \delta &gt; u(w),
+  \end{cases}
+  \tag{9.3}
+\end{equation}\]</span>
+where <span class="math inline">\(\delta \in \mathbb{R}\)</span> defines the degree to which an observed <span class="math inline">\(A = a\)</span>
+ought to be shifted, in the context of the stratum <span class="math inline">\(W = w\)</span>, and <span class="math inline">\(l(w)\)</span> and
+<span class="math inline">\(u(w)\)</span> are the minimum and maximum values of the treatment <span class="math inline">\(A\)</span> in the stratum
+<span class="math inline">\(W = w\)</span>. Consider, for example, the case where <span class="math inline">\(A\)</span> denotes a (continuous-valued)
+dosage of nutritional supplements (e.g., number of vitamin pills) and assume
+that the distribution of <span class="math inline">\(A\)</span> conditional on <span class="math inline">\(W = w\)</span> has support in the interval
+<span class="math inline">\((l(w), u(w))\)</span>. That is, the minimum number of pills taken for an individual
+with in the covariate stratum defined by <span class="math inline">\(W = w\)</span> is <span class="math inline">\(l(w)\)</span>; similarly, the
+maximum is <span class="math inline">\(u(w)\)</span>. Such a stochastic intervention may be interpreted as the
+result of a clinic policy encouraging individuals to consume <span class="math inline">\(\delta\)</span> more
+vitamin pills (<span class="math inline">\(A \delta\)</span>) than they would normally be recommended (<span class="math inline">\(A\)</span>) based
+on their baseline characteristics <span class="math inline">\(W\)</span>. This class of stochastic interventions
+was introduced by <span class="citation">Dı́az and van der Laan (<a href="references.html#ref-diaz2012population" role="doc-biblioref">2012</a>)</span> and has been further discussed in
+<span class="citation">Haneuse and Rotnitzky (<a href="references.html#ref-haneuse2013estimation" role="doc-biblioref">2013</a>)</span>, <span class="citation">Dı́az and van der Laan (<a href="references.html#ref-diaz2018stochastic" role="doc-biblioref">2018</a>)</span>, <span class="citation">Hejazi, van der Laan, <em>et al.</em> (<a href="references.html#ref-hejazi2020efficient" role="doc-biblioref">2020</a>)</span>, and
+<span class="citation">Hejazi (<a href="references.html#ref-hejazi2021semiparametric" role="doc-biblioref">2021</a>)</span>. This class of interventions may be expressed as a
+general stochastic intervention, as per <span class="citation">Dı́az and van der Laan (<a href="references.html#ref-diaz2012population" role="doc-biblioref">2012</a>)</span>, by considering the
+random draw <span class="math inline">\(\P_{A_{\delta}}(g_{0, A})(A = a \mid W) = g_{0,A}(a - \delta(W) \mid W)\)</span>.</p>
+<p>In order to evaluate the causal effect of our intervention, we consider as a
+parameter of interest the counterfactual mean of the outcome under our
+stochastically modified intervention distribution. This target causal estimand
+is <span class="math inline">\(\psi_{0, \delta} \coloneqq \E_{P_0^{A_{\delta}}}\{Y_{A_{\delta}}\}\)</span>, the
+mean of the counterfactual outcome variable <span class="math inline">\(Y_{A_{\delta}}\)</span>.
+<span class="citation">Dı́az and van der Laan (<a href="references.html#ref-diaz2018stochastic" role="doc-biblioref">2018</a>)</span> showed that <span class="math inline">\(\psi_{0, \delta}\)</span> may be identified by a
+functional of the distribution of <span class="math inline">\(O\)</span>:
+<span class="math display" id="eq:identification2012">\[\begin{align}
+  \psi_{0,\delta} = \int_{\mathcal{W}} \int_{\mathcal{A}} &amp; \E_{P_0}
+   \{Y \mid A = d(a, w), W = w\} \nonumber \\ &amp;q_{0, A}(a \mid W = w)
+   q_{0, W}(w) d\mu(a)d\nu(w).
+  \tag{9.4}
+\end{align}\]</span>
+Under certain identification conditions, which we will enumerate shortly, the
+statistical parameter in Equation <a href="shift.html#eq:identification2012">(9.4)</a> matches exactly
+the counterfactual mean <span class="math inline">\(\psi_{0, \delta}\)</span>. While this book is not concerned
+with the identification of causal parameters – that is, establishing
+statistical functionals of the observed data that have causal interpretations
+under certain assumptions – we review key assumptions for identifying the
+counterfactual mean <span class="math inline">\(\psi_{0, \delta}\)</span> below. As the SCM introduced prior
+generates independent and identically distributed units <span class="math inline">\(O\)</span>, the common
+identification assumptions of consistency (<span class="math inline">\(Y^{A_{\delta,i}}_i = Y_i\)</span> in the
+event <span class="math inline">\(A_i = d(a_i, w_i)\)</span>, for <span class="math inline">\(i = 1, \ldots, n\)</span>) and lack of interference
+(<span class="math inline">\(Y^{A_{\delta,i}}_i\)</span> does not depend on <span class="math inline">\(d(a_j, w_j)\)</span> for <span class="math inline">\(i = 1, \ldots, n\)</span>
+and <span class="math inline">\(j \neq i\)</span>) hold. Beyond these, we require no unmeasured confounding (the
+analog to the randomization assumption in observational studies) and positivity.</p>
+<div class="definition">
+<p><span id="def:unlabeled-div-2" class="definition"><strong>Definition 9.2  (No Unmeasured Confounding) </strong></span><span class="math inline">\(A_i \indep Y^{A_{\delta,i}}_i \mid W_i\)</span>, for <span class="math inline">\(i = 1, \ldots, n\)</span>. This is the
+observational study analog to the well-known randomization assumption.</p>
+</div>
+<!-- TODO: explain this-->
+<div class="definition">
+<p><span id="def:unlabeled-div-3" class="definition"><strong>Definition 9.3  (Treatment Positivity) </strong></span><span class="math inline">\(a_i \in \mathcal{A} \implies d(a_i, w_i) \in \mathcal{A}\)</span> for all <span class="math inline">\(w \in \mathcal{W}\)</span>, where <span class="math inline">\(\mathcal{A}\)</span> denotes the support of <span class="math inline">\(A \mid W = w_i \quad \forall i = 1, \ldots n\)</span>.</p>
+</div>
+<!-- TODO: explain this-->
+</div>
+<div id="estimating-the-causal-effect-of-a-stochastic-intervention" class="section level2" number="9.4">
+<h2>
+<span class="header-section-number">9.4</span> Estimating the Causal Effect of a Stochastic Intervention<a class="anchor" aria-label="anchor" href="#estimating-the-causal-effect-of-a-stochastic-intervention"><i class="fas fa-link"></i></a>
+</h2>
+<p><span class="citation">Dı́az and van der Laan (<a href="references.html#ref-diaz2012population" role="doc-biblioref">2012</a>)</span> provided a derivation of the efficient influence function
+(EIF), a key quantity for constructing efficient estimators, in the
+nonparametric model <span class="math inline">\(\M\)</span> and developed both classical and efficient estimators
+of this quantity, including substitution, inverse probability weighted, one-step
+and targeted maximum likelihood (TML) estimators. Both the one-step and TML
+estimators allow for semiparametric-efficient estimation and inference on the
+target quantity of interest <span class="math inline">\(\psi_{0, \delta}\)</span>. As described by
+<span class="citation">Dı́az and van der Laan (<a href="references.html#ref-diaz2018stochastic" role="doc-biblioref">2018</a>)</span>, the EIF of <span class="math inline">\(\psi_{0, \delta}\)</span>, with respect to the
+nonparametric model <span class="math inline">\(\M\)</span>, is
+<span class="math display" id="eq:eif-shift">\[\begin{equation}
+  D(P_0)(x) = H(a, w)({y - \overline{Q}(a, w)}) +
+  \overline{Q}(d(a, w), w) - \Psi(P_0),
+  \tag{9.5}
+\end{equation}\]</span>
+where the auxiliary covariate <span class="math inline">\(H(a,w)\)</span> may be expressed
+<span class="math display" id="eq:aux-covar-full-shift">\[\begin{equation}
+  H(a,w) = \mathbb{I}(a + \delta &lt; u(w)) \frac{g_0(a - \delta \mid w)}
+  {g_0(a \mid w)} + \mathbb{I}(a + \delta \geq u(w)),
+  \tag{9.6}
+\end{equation}\]</span>
+which may be reduced to
+<span class="math display" id="eq:aux-covar-simple-shift">\[\begin{equation}
+  H(a,w) = \frac{g_0(a - \delta \mid w)}{g_0(a \mid w)} + 1
+  \tag{9.7}
+\end{equation}\]</span>
+when the treatment <span class="math inline">\(A\)</span> lies within the limits defined by the covariate strata
+<span class="math inline">\(W\)</span>, that is, for <span class="math inline">\(A_i \in (u(w) - \delta, u(w))\)</span>. The efficient influence
+function is a key ingredient in the construction of semiparametric-efficient
+estimators. Next, we focus on a targeted maximum likelihood (TML) estimator, for
+which <span class="citation">Dı́az and van der Laan (<a href="references.html#ref-diaz2018stochastic" role="doc-biblioref">2018</a>)</span> give the following recipe:</p>
+<ol style="list-style-type: decimal">
+<li>Construct initial estimators <span class="math inline">\(g_n\)</span> of <span class="math inline">\(g_0(A, W)\)</span> and <span class="math inline">\(\overline{Q}_n\)</span> of
+<span class="math inline">\(\overline{Q}_0(A, W)\)</span>, ideally using data-adaptive regression techniques.</li>
+<li>For each observation <span class="math inline">\(i\)</span>, compute an estimate <span class="math inline">\(H_n(a_i, w_i)\)</span> of the
+auxiliary covariate <span class="math inline">\(H(a_i,w_i)\)</span>.</li>
+<li>Construct the one-dimensional logistic regression model,
+<span class="math display">\[ \text{logit}\overline{Q}_{\epsilon, n}(a, w) =
+\text{logit}\overline{Q}_n(a, w) + \epsilon H_n(a, w),\]</span>
+or an analogous regression model incorporating <span class="math inline">\(H_n\)</span> as weights. Estimate the
+regression model’s parameter <span class="math inline">\(\epsilon\)</span>, obtaining <span class="math inline">\(\epsilon_n\)</span>. The outcome
+of this regression model yields <span class="math inline">\(\overline{Q}_n^{\star}\)</span>.</li>
+<li>Compute TML estimator <span class="math inline">\(\Psi_n\)</span> of the target parameter, defining update
+<span class="math inline">\(\overline{Q}_n^{\star}\)</span> of the initial estimate
+<span class="math inline">\(\overline{Q}_{n, \epsilon_n}\)</span>:
+<span class="math display" id="eq:tmle">\[\begin{equation}
+  \psi_n = \Psi(P_n^{\star}) = \frac{1}{n} \sum_{i = 1}^n
+  \overline{Q}_n^{\star}(d(A_i, W_i), W_i).
+  \tag{9.8}
+\end{equation}\]</span>
+</li>
+</ol>
+<p>As <a href="tmle3.html#tmle3">discussed previously</a>, TML estimators are constructed so as to be
+<em>asymptotically linear</em> and are usually <em>doubly robust</em>. Asymptotic linearity
+means that the asymptotic difference between the estimator <span class="math inline">\(\psi_n\)</span> and the
+target parameter <span class="math inline">\(\psi_0\)</span> can be expressed in terms of the EIF, that is,
+<span class="math display" id="eq:asymplin-shift">\[\begin{equation}
+  \sqrt{n}(\psi_n - \psi_0) = \frac{1}{\sqrt{n}}\sum_{i=1}^n D(P_0)(O_i) +
+    o_p(1).
+  \tag{9.9}
+\end{equation}\]</span>
+Together with regularity, asymptotic linearity establishes a class of estimators
+whose asymptotic variance is bounded from below by the asymptotic variance of
+the EIF. This means that such estimators are solutions to the EIF estimating
+equation (i.e., plugging the TML estimator <span class="math inline">\(\psi_n\)</span> into the EIF equation
+results in a solution close to zero) and that their sampling variance may be
+approximated by the variance of the EIF in closed form. This latter fact is
+computationally convenient, as resampling methods (e.g., the bootstrap) are not
+strictly necessary for variance estimation. A central limit theorem establishes
+that the asymptotic distribution of the estimator <span class="math inline">\(\psi_n\)</span> is centered at
+<span class="math inline">\(\psi_0\)</span> and is Gaussian:
+<span class="math display" id="eq:tmle-gaussian-shift">\[\begin{equation}
+  \sqrt{n}(\psi_n - \psi_0) \to \text{Normal}(0, \sigma^2(D(P_0))).
+  \tag{9.10}
+\end{equation}\]</span>
+Thus, an estimate <span class="math inline">\(\sigma_n^2\)</span> of the variance <span class="math inline">\(\sigma^2(D(P_0))\)</span> may be
+computed
+<span class="math display" id="eq:eif-var-shift">\[\begin{equation}
+  \sigma_n^2 = \frac{1}{n} \sum_{i = 1}^{n} D^2(\overline{Q}_n^{\star},
+  g_n)(O_i),
+  \tag{9.11}
+\end{equation}\]</span>
+allowing for Wald-style confidence intervals at coverage level <span class="math inline">\((1 - \alpha)\)</span> to
+be computed as <span class="math inline">\(\psi_n \pm z_{(1 - \alpha/2)} \cdot \sigma_n / \sqrt{n}\)</span>. Under
+certain conditions, the resampling based on the bootstrap may also be used to
+compute <span class="math inline">\(\sigma_n^2\)</span> <span class="citation">(<a href="references.html#ref-vdl2011targeted" role="doc-biblioref">van der Laan and Rose, 2011</a>)</span>.</p>
+<!--
+Recall that the asymptotic distribution of TML estimators has been studied
+thoroughly:
+$$\psi_n - \psi_0 = (P_n - P_0) \cdot D(\bar{Q}_n^{\star}, g_n) +
+R(\hat{P}^{\star}, P_0),$$
+which, provided the following two conditions,
+
+1. If $D(\bar{Q}_n^{\star}, g_n)$ converges to $D(P_0)$ in $L_2(P_0)$ norm, and
+2. the size of the class of functions considered for estimation of
+   $\bar{Q}_n^{\star}$ and $g_n$ is bounded (technically, $\exists \mathcal{F}$
+   such that $D(\bar{Q}_n^{\star}, g_n) \in \mathcal{F}$ _whp_, where
+   $\mathcal{F}$ is a Donsker class),
+readily admits the conclusion that
+$\psi_n - \psi_0 = (P_n - P_0) \cdot D(P_0) + R(\hat{P}^{\star}, P_0)$.
+
+Under the additional condition that the remainder term $R(\hat{P}^{\star},
+P_0)$ decays as $o_P \left( \frac{1}{\sqrt{n}} \right)$, we have that $$\psi_n
+- \psi_0 = (P_n - P_0) \cdot D(P_0) + o_P \left( \frac{1}{\sqrt{n}} \right),$$
+which, by a central limit theorem, establishes a Gaussian limiting distribution
+for the estimator:
+
+$$\sqrt{n}(\psi_n - \psi) \to N(0, V(D(P_0))),$$ where $V(D(P_0))$ is the
+variance of the efficient influence curve (canonical gradient) when $\psi$
+admits an asymptotically linear representation.
+
+The above implies that $\psi_n$ is a $\sqrt{n}$-consistent estimator of $\psi$,
+that it is asymptotically normal (as given above), and that it is locally
+efficient. This allows us to build Wald-type confidence intervals in a
+straightforward manner:
+
+$$\psi_n \pm z_{\alpha} \cdot \frac{\sigma_n}{\sqrt{n}},$$
+where $\sigma_n^2$ is an estimator of $V(D(P_0))$. The estimator $\sigma_n^2$
+may be obtained using the bootstrap or computed directly via the following
+
+$$\sigma_n^2 = \frac{1}{n} \sum_{i = 1}^{n} D^2(\bar{Q}_n^{\star}, g_n)(O_i)$$
+-->
+</div>
+<div id="interpreting-the-causal-effect-of-a-stochastic-intervention" class="section level2" number="9.5">
+<h2>
+<span class="header-section-number">9.5</span> Interpreting the Causal Effect of a Stochastic Intervention<a class="anchor" aria-label="anchor" href="#interpreting-the-causal-effect-of-a-stochastic-intervention"><i class="fas fa-link"></i></a>
+</h2>
+<div class="figure" style="text-align: center">
+<span style="display:block;" id="fig:unnamed-chunk-1"></span>
+<img src="img/gif/shift_animation.gif" alt="How a counterfactual outcome changes as the natural treatment distribution is shifted by a simple stochastic intervention" width="100%"><p class="caption">
+FIGURE 5.1: How a counterfactual outcome changes as the natural treatment distribution is shifted by a simple stochastic intervention
+</p>
+</div>
+</div>
+<div id="evaluating-the-causal-effect-of-a-stochastic-intervention" class="section level2" number="9.6">
+<h2>
+<span class="header-section-number">9.6</span> Evaluating the Causal Effect of a Stochastic Intervention<a class="anchor" aria-label="anchor" href="#evaluating-the-causal-effect-of-a-stochastic-intervention"><i class="fas fa-link"></i></a>
+</h2>
+<p>To start, let’s load the packages we’ll be using throughout our simple data example</p>
+<div class="sourceCode" id="cb159"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com">data.table</a></span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/nhejazi/haldensify">haldensify</a></span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://tlverse.org/sl3">sl3</a></span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://tlverse.org/tmle3">tmle3</a></span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://tlverse.org/tmle3shift">tmle3shift</a></span><span class="op">)</span></code></pre></div>
+<p>We need to estimate two components of the likelihood in order to construct a TML
+estimator. The first of these components is the outcome regression,
+<span class="math inline">\(\overline{Q}_n\)</span>, which is a simple regression of the form <span class="math inline">\(\E[Y \mid A,W]\)</span>. An
+estimate for such a quantity may be constructed using the Super Learner
+algorithm. We construct the components of an <code>sl3</code>-style Super Learner for a
+regression below, using a small variety of parametric and nonparametric
+regression techniques:</p>
+<div class="sourceCode" id="cb160"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># learners used for conditional mean of the outcome</span>
+<span class="va">mean_lrnr</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_mean.html">Lrnr_mean</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span>
+<span class="va">fglm_lrnr</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_glm_fast.html">Lrnr_glm_fast</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span>
+<span class="va">rf_lrnr</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_ranger.html">Lrnr_ranger</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span>
+<span class="va">hal_lrnr</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_hal9001.html">Lrnr_hal9001</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>max_degree <span class="op">=</span> <span class="fl">3</span>, n_folds <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>
+
+<span class="co"># SL for the outcome regression</span>
+<span class="va">sl_reg_lrnr</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_sl.html">Lrnr_sl</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>
+  learners <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="va">mean_lrnr</span>, <span class="va">fglm_lrnr</span>, <span class="va">rf_lrnr</span>, <span class="va">hal_lrnr</span><span class="op">)</span>,
+  metalearner <span class="op">=</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_nnls.html">Lrnr_nnls</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span>
+<span class="op">)</span></code></pre></div>
+<p>The second of these is an estimate of the treatment mechanism, <span class="math inline">\(g_n\)</span>, i.e., the
+<em>generalized propensity score</em>. In the case of a continuous intervention node
+<span class="math inline">\(A\)</span>, such a quantity takes the form <span class="math inline">\(p(A \mid W)\)</span>, which is a conditional
+density. Generally speaking, conditional density estimation is a challenging
+problem that has received much attention in the literature. To estimate the
+treatment mechanism, we must make use of learning algorithms specifically suited
+to conditional density estimation; a list of such learners may be extracted from
+<code>sl3</code> by using <code><a href="https://tlverse.org/sl3/reference/list_learners.html">sl3_list_learners()</a></code>:</p>
+<div class="sourceCode" id="cb161"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb161-1"><a href="shift.html#cb161-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sl3_list_learners</span>(<span class="st">"density"</span>)</span>
+<span id="cb161-2"><a href="shift.html#cb161-2" aria-hidden="true" tabindex="-1"></a>[<span class="dv">1</span>] <span class="st">"Lrnr_density_discretize"</span>     <span class="st">"Lrnr_density_hse"</span>           </span>
+<span id="cb161-3"><a href="shift.html#cb161-3" aria-hidden="true" tabindex="-1"></a>[<span class="dv">3</span>] <span class="st">"Lrnr_density_semiparametric"</span> <span class="st">"Lrnr_haldensify"</span>            </span>
+<span id="cb161-4"><a href="shift.html#cb161-4" aria-hidden="true" tabindex="-1"></a>[<span class="dv">5</span>] <span class="st">"Lrnr_solnp_density"</span>         </span></code></pre></div>
+<p>To proceed, we’ll select two of the above learners, <code>Lrnr_haldensify</code> for using
+the highly adaptive lasso for conditional density estimation, based on an
+algorithm given by <span class="citation">Dı́az and van der Laan (<a href="references.html#ref-diaz2011super" role="doc-biblioref">2011</a>)</span> and implemented in <span class="citation">Hejazi, Benkeser, <em>et al.</em> (<a href="references.html#ref-hejazi2020haldensify" role="doc-biblioref">2022</a>)</span>, and
+semiparametric location-scale conditional density estimators implemented in the
+<a href="https://github.com/tlverse/sl3"><code>sl3</code> package</a>. A Super Learner may be
+constructed by pooling estimates from each of these modified conditional density
+regression techniques (note that we exclude the approach based on the
+<code>haldensify</code> learner from our Super Learner on account of the computationally
+intensive nature of the approach).</p>
+<div class="sourceCode" id="cb162"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># learners used for conditional densities for (g_n)</span>
+<span class="va">haldensify_lrnr</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_haldensify.html">Lrnr_haldensify</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>
+  n_bins <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fl">10</span>, <span class="fl">20</span><span class="op">)</span>,
+  lambda_seq <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html">exp</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html">seq</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span>, <span class="op">-</span><span class="fl">10</span>, length <span class="op">=</span> <span class="fl">200</span><span class="op">)</span><span class="op">)</span>
+<span class="op">)</span>
+<span class="co"># semiparametric density estimator with homoscedastic errors (HOSE)</span>
+<span class="va">hose_hal_lrnr</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tlverse.org/sl3/reference/Lrnr_base.html">make_learner</a></span><span class="op">(</span><span class="va">Lrnr_density_semiparametric</span>,
+  mean_learner <span class="op">=</span> <span class="va">hal_lrnr</span>
+<span class="op">)</span>
+<span class="co"># semiparametric density estimator with heteroscedastic errors (HESE)</span>
+<span class="va">hese_rf_glm_lrnr</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tlverse.org/sl3/reference/Lrnr_base.html">make_learner</a></span><span class="op">(</span><span class="va">Lrnr_density_semiparametric</span>,
+  mean_learner <span class="op">=</span> <span class="va">rf_lrnr</span>,
+  var_learner <span class="op">=</span> <span class="va">fglm_lrnr</span>
+<span class="op">)</span>
+
+<span class="co"># SL for the conditional treatment density</span>
+<span class="va">sl_dens_lrnr</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_sl.html">Lrnr_sl</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>
+  learners <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="va">hose_hal_lrnr</span>, <span class="va">hese_rf_glm_lrnr</span><span class="op">)</span>,
+  metalearner <span class="op">=</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_solnp_density.html">Lrnr_solnp_density</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span>
+<span class="op">)</span></code></pre></div>
+<p>Finally, we construct a <code>learner_list</code> object for use in constructing a TML
+estimator of our target parameter of interest:</p>
+<div class="sourceCode" id="cb163"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">learner_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">sl_reg_lrnr</span>, A <span class="op">=</span> <span class="va">sl_dens_lrnr</span><span class="op">)</span></code></pre></div>
+<p>The <code>learner_list</code> object above specifies the role that each of the ensemble
+learners we have generated is to play in computing initial estimators to be
+used in building a TMLE for the parameter of interest here. In particular, it
+makes explicit the fact that our <code>Q_learner</code> is used in fitting the outcome
+regression while our <code>g_learner</code> is used in estimating the treatment mechanism.</p>
+<div id="example-with-simulated-data" class="section level3" number="9.6.1">
+<h3>
+<span class="header-section-number">9.6.1</span> Example with Simulated Data<a class="anchor" aria-label="anchor" href="#example-with-simulated-data"><i class="fas fa-link"></i></a>
+</h3>
+<div class="sourceCode" id="cb164"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb164-1"><a href="shift.html#cb164-1" aria-hidden="true" tabindex="-1"></a><span class="co"># simulate simple data for tmle-shift sketch</span></span>
+<span id="cb164-2"><a href="shift.html#cb164-2" aria-hidden="true" tabindex="-1"></a>n_obs <span class="ot">&lt;-</span> <span class="dv">400</span> <span class="co"># number of observations</span></span>
+<span id="cb164-3"><a href="shift.html#cb164-3" aria-hidden="true" tabindex="-1"></a>tx_mult <span class="ot">&lt;-</span> <span class="dv">2</span> <span class="co"># multiplier for the effect of W = 1 on the treatment</span></span>
+<span id="cb164-4"><a href="shift.html#cb164-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb164-5"><a href="shift.html#cb164-5" aria-hidden="true" tabindex="-1"></a><span class="do">## baseline covariates -- simple, binary</span></span>
+<span id="cb164-6"><a href="shift.html#cb164-6" aria-hidden="true" tabindex="-1"></a>W <span class="ot">&lt;-</span> <span class="fu">replicate</span>(<span class="dv">2</span>, <span class="fu">rbinom</span>(n_obs, <span class="dv">1</span>, <span class="fl">0.5</span>))</span>
+<span id="cb164-7"><a href="shift.html#cb164-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb164-8"><a href="shift.html#cb164-8" aria-hidden="true" tabindex="-1"></a><span class="do">## create treatment based on baseline W</span></span>
+<span id="cb164-9"><a href="shift.html#cb164-9" aria-hidden="true" tabindex="-1"></a>A <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_obs, <span class="at">mean =</span> tx_mult <span class="sc">*</span> W, <span class="at">sd =</span> <span class="dv">1</span>)</span>
+<span id="cb164-10"><a href="shift.html#cb164-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb164-11"><a href="shift.html#cb164-11" aria-hidden="true" tabindex="-1"></a><span class="do">## create outcome as a linear function of A, W + white noise</span></span>
+<span id="cb164-12"><a href="shift.html#cb164-12" aria-hidden="true" tabindex="-1"></a>Y <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n_obs, <span class="dv">1</span>, <span class="at">prob =</span> <span class="fu">plogis</span>(A <span class="sc">+</span> W))</span>
+<span id="cb164-13"><a href="shift.html#cb164-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb164-14"><a href="shift.html#cb164-14" aria-hidden="true" tabindex="-1"></a><span class="co"># organize data and nodes for tmle3</span></span>
+<span id="cb164-15"><a href="shift.html#cb164-15" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">data.table</span>(W, A, Y)</span>
+<span id="cb164-16"><a href="shift.html#cb164-16" aria-hidden="true" tabindex="-1"></a><span class="fu">setnames</span>(data, <span class="fu">c</span>(<span class="st">"W1"</span>, <span class="st">"W2"</span>, <span class="st">"A"</span>, <span class="st">"Y"</span>))</span>
+<span id="cb164-17"><a href="shift.html#cb164-17" aria-hidden="true" tabindex="-1"></a>node_list <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb164-18"><a href="shift.html#cb164-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">W =</span> <span class="fu">c</span>(<span class="st">"W1"</span>, <span class="st">"W2"</span>),</span>
+<span id="cb164-19"><a href="shift.html#cb164-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">A =</span> <span class="st">"A"</span>,</span>
+<span id="cb164-20"><a href="shift.html#cb164-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">Y =</span> <span class="st">"Y"</span></span>
+<span id="cb164-21"><a href="shift.html#cb164-21" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb164-22"><a href="shift.html#cb164-22" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(data)</span>
+<span id="cb164-23"><a href="shift.html#cb164-23" aria-hidden="true" tabindex="-1"></a>   W1 W2        A Y</span>
+<span id="cb164-24"><a href="shift.html#cb164-24" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>  <span class="dv">1</span>  <span class="dv">1</span>  <span class="fl">0.27165</span> <span class="dv">1</span></span>
+<span id="cb164-25"><a href="shift.html#cb164-25" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span><span class="sc">:</span>  <span class="dv">0</span>  <span class="dv">0</span> <span class="sc">-</span><span class="fl">0.66337</span> <span class="dv">1</span></span>
+<span id="cb164-26"><a href="shift.html#cb164-26" aria-hidden="true" tabindex="-1"></a><span class="dv">3</span><span class="sc">:</span>  <span class="dv">0</span>  <span class="dv">0</span>  <span class="fl">0.11337</span> <span class="dv">0</span></span>
+<span id="cb164-27"><a href="shift.html#cb164-27" aria-hidden="true" tabindex="-1"></a><span class="dv">4</span><span class="sc">:</span>  <span class="dv">0</span>  <span class="dv">1</span> <span class="sc">-</span><span class="fl">0.73256</span> <span class="dv">0</span></span>
+<span id="cb164-28"><a href="shift.html#cb164-28" aria-hidden="true" tabindex="-1"></a><span class="dv">5</span><span class="sc">:</span>  <span class="dv">1</span>  <span class="dv">1</span>  <span class="fl">0.38884</span> <span class="dv">1</span></span>
+<span id="cb164-29"><a href="shift.html#cb164-29" aria-hidden="true" tabindex="-1"></a><span class="dv">6</span><span class="sc">:</span>  <span class="dv">0</span>  <span class="dv">0</span>  <span class="fl">0.04399</span> <span class="dv">0</span></span></code></pre></div>
+<p>The above composes our observed data structure <span class="math inline">\(O = (W, A, Y)\)</span>. To formally
+express this fact using the <code>tlverse</code> grammar introduced by the <code>tmle3</code> package,
+we create a single data object and specify the functional relationships between
+the nodes in the <em>directed acyclic graph</em> (DAG) via an SCM, reflected in the
+node list we set up.</p>
+<p>We now have an observed data structure (<code>data</code>) and a specification of the role
+that each variable in the data set plays as the nodes in a DAG.</p>
+<p>To start, we will initialize a specification for the TMLE of our parameter of
+interest (called a <code>tmle3_Spec</code> in the <code>tlverse</code> nomenclature) simply by calling
+<code>tmle_shift</code>. We specify the argument <code>shift_val = 0.5</code> when initializing the
+<code>tmle3_Spec</code> object to communicate that we’re interested in a shift of <span class="math inline">\(0.5\)</span> on
+the scale of the treatment <span class="math inline">\(A\)</span> – that is, we specify <span class="math inline">\(\delta = 0.5\)</span> (an
+arbitrarily chosen value for this example).</p>
+<div class="sourceCode" id="cb165"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># initialize a tmle specification</span>
+<span class="va">tmle_spec</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tlverse.org/tmle3shift/reference/tmle_shift.html">tmle_shift</a></span><span class="op">(</span>
+  shift_val <span class="op">=</span> <span class="fl">0.5</span>,
+  shift_fxn <span class="op">=</span> <span class="va">shift_additive</span>,
+  shift_fxn_inv <span class="op">=</span> <span class="va">shift_additive_inv</span>
+<span class="op">)</span></code></pre></div>
+<p>As seen above, the <code>tmle_shift</code> specification object (like all <code>tmle3_Spec</code>
+objects) does <em>not</em> store the data for our specific analysis of interest. Later,
+we’ll see that passing a data object directly to the <code>tmle3</code> wrapper function,
+alongside the instantiated <code>tmle_spec</code>, will serve to construct a <code>tmle3_Task</code>
+object internally (see the <code>tmle3</code> documentation for details).</p>
+</div>
+<div id="targeted-estimation-of-stochastic-interventions-effects" class="section level3" number="9.6.2">
+<h3>
+<span class="header-section-number">9.6.2</span> Targeted Estimation of Stochastic Interventions Effects<a class="anchor" aria-label="anchor" href="#targeted-estimation-of-stochastic-interventions-effects"><i class="fas fa-link"></i></a>
+</h3>
+<div class="sourceCode" id="cb166"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb166-1"><a href="shift.html#cb166-1" aria-hidden="true" tabindex="-1"></a>tmle_fit <span class="ot">&lt;-</span> <span class="fu">tmle3</span>(tmle_spec, data, node_list, learner_list)</span>
+<span id="cb166-2"><a href="shift.html#cb166-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb166-3"><a href="shift.html#cb166-3" aria-hidden="true" tabindex="-1"></a>Iter<span class="sc">:</span> <span class="dv">1</span> fn<span class="sc">:</span> <span class="fl">548.8338</span>     Pars<span class="sc">:</span>  <span class="fl">0.94735</span> <span class="fl">0.05265</span></span>
+<span id="cb166-4"><a href="shift.html#cb166-4" aria-hidden="true" tabindex="-1"></a>Iter<span class="sc">:</span> <span class="dv">2</span> fn<span class="sc">:</span> <span class="fl">548.8338</span>     Pars<span class="sc">:</span>  <span class="fl">0.94736</span> <span class="fl">0.05264</span></span>
+<span id="cb166-5"><a href="shift.html#cb166-5" aria-hidden="true" tabindex="-1"></a>solnp<span class="sc">-</span><span class="ot">-&gt;</span> Completed <span class="cf">in</span> <span class="dv">2</span> iterations</span>
+<span id="cb166-6"><a href="shift.html#cb166-6" aria-hidden="true" tabindex="-1"></a>tmle_fit</span>
+<span id="cb166-7"><a href="shift.html#cb166-7" aria-hidden="true" tabindex="-1"></a>A tmle3_Fit that took <span class="dv">1</span> <span class="fu">step</span>(s)</span>
+<span id="cb166-8"><a href="shift.html#cb166-8" aria-hidden="true" tabindex="-1"></a>   type         param init_est tmle_est      se  lower  upper psi_transformed</span>
+<span id="cb166-9"><a href="shift.html#cb166-9" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>  TSM E[Y_{A<span class="ot">=</span><span class="cn">NULL</span>}]   <span class="fl">0.7645</span>   <span class="fl">0.7601</span> <span class="fl">0.02284</span> <span class="fl">0.7154</span> <span class="fl">0.8049</span>          <span class="fl">0.7601</span></span>
+<span id="cb166-10"><a href="shift.html#cb166-10" aria-hidden="true" tabindex="-1"></a>   lower_transformed upper_transformed</span>
+<span id="cb166-11"><a href="shift.html#cb166-11" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>            <span class="fl">0.7154</span>            <span class="fl">0.8049</span></span></code></pre></div>
+<p>The <code>print</code> method of the resultant <code>tmle_fit</code> object conveniently displays the
+results of computing our TML estimator <span class="math inline">\(\psi_n\)</span>. The standard error estimate
+is computed based on the estimated EIF.</p>
+</div>
+</div>
+<div id="selecting-stable-stochastic-interventions" class="section level2" number="9.7">
+<h2>
+<span class="header-section-number">9.7</span> Selecting Stable Stochastic Interventions<a class="anchor" aria-label="anchor" href="#selecting-stable-stochastic-interventions"><i class="fas fa-link"></i></a>
+</h2>
+<p>At times, a particular choice of the shift parameter <span class="math inline">\(\delta\)</span> may lead to
+positivity violations and downstream instability in the estimation process. In
+order to curb such issues, we can make choices of <span class="math inline">\(\delta\)</span> based on the impact
+of the candidate values on the estimator. Recall that a simplified expression of
+the auxiliary covariate for the TMLE of <span class="math inline">\(\psi\)</span> is <span class="math inline">\(H = \frac{g(a - \delta \mid w)}{g(a \mid w)}\)</span>, where <span class="math inline">\(g(a - \delta \mid w)\)</span> is defined by the stochastic
+intervention of interest. We can design our stochastic intervention to avoid
+violations of the positivity assumption by by considering a bound <span class="math inline">\(C(\delta) = \frac{g(a - \delta \mid w)}{g(a \mid w)} &lt; M\)</span>, where <span class="math inline">\(M\)</span> is a potentially
+user-specified upper bound of <span class="math inline">\(C(\delta)\)</span>. Note that <span class="math inline">\(C(\delta)\)</span> corresponds to
+the inverse weight assigned to the unit with counterfactual treatment value <span class="math inline">\(A = a + \delta\)</span>, natural treatment value <span class="math inline">\(A = a\)</span>, and covariates <span class="math inline">\(W = w\)</span>. So,
+<span class="math inline">\(C(\delta)\)</span> can be viewed as a measure of the influence that a given observation
+has on the estimator <span class="math inline">\(\psi_n\)</span>. By limiting <span class="math inline">\(C(\delta)\)</span>, whether through a choice
+of <span class="math inline">\(M\)</span> or <span class="math inline">\(\delta\)</span>, we can limit the potential instability of our estimator. We
+can formalize this procedure by defining a new shift function <span class="math inline">\(\delta(A, W)\)</span>:
+<span class="math display" id="eq:delta-min-max-shift">\[\begin{equation}
+  \delta(a, w) =
+    \begin{cases}
+      \delta, &amp; \delta_{\text{min}}(a,w) \leq \delta \leq
+        \delta_{\text{max}}(a,w) \\
+      \delta_{\text{max}}(a,w), &amp; \delta \geq \delta_{\text{max}}(a,w) \\
+      \delta_{\text{min}}(a,w), &amp; \delta \leq \delta_{\text{min}}(a,w) \\
+    \end{cases},
+    \tag{9.12}
+\end{equation}\]</span>
+where <span class="math display">\[\delta_{\text{max}}(a, w) = \text{argmax}_{\left\{\delta \geq 0,
+\frac{g(a - \delta \mid w)}{g(a \mid w)} \leq M \right\}} \frac{g(a - \delta
+\mid w)}{g(a \mid w)}\]</span> and
+<span class="math display">\[\delta_{\text{min}}(a, w) = \text{argmin}_{\left\{\delta \leq 0,
+\frac{g(a - \delta \mid w)}{g(a \mid w)} \leq M \right\}} \frac{g(a - \delta
+\mid w)}{g(a \mid w)}.\]</span></p>
+<p>The above provides a strategy for implementing a shift at the level of a given
+observation <span class="math inline">\((a_i, w_i)\)</span>, thereby allowing for all observations to be shifted to
+an appropriate value, whether <span class="math inline">\(\delta_{\text{min}}\)</span>, <span class="math inline">\(\delta\)</span>, or
+<span class="math inline">\(\delta_{\text{max}}\)</span>. The <a href="https://github.com/tlverse/tmle3shift"><code>tmle3shift</code></a>
+package implements the functions <code>shift_additive_bounded</code> and
+<code>shift_additive_bounded_inv</code>, which define a variation of this strategy:
+<span class="math display" id="eq:shift-bounded-simple">\[\begin{equation}
+  \delta(a, w) =
+    \begin{cases}
+      \delta, &amp; C(\delta) \leq M \\
+      0, \text{otherwise} \\
+    \end{cases},
+  \tag{9.13}
+\end{equation}\]</span>
+corresponding to an intervention in which the natural value of treatment <span class="math inline">\(A = a\)</span>
+is shifted by a value <span class="math inline">\(\delta\)</span> when the ratio <span class="math inline">\(C(\delta)\)</span> of the
+post-intervention density <span class="math inline">\(g(a - \delta \mid w)\)</span> to the natural treatment
+density <span class="math inline">\(g(a \mid w)\)</span> does not exceed a bound <span class="math inline">\(M\)</span>. When <span class="math inline">\(C(\delta)\)</span> exceeds the
+bound <span class="math inline">\(M\)</span>, the stochastic intervention exempts the given unit from the treatment
+modification, leaving them to their natural value of treatment <span class="math inline">\(A = a\)</span>.</p>
+<div id="initializing-vimshift-through-its-tmle3_spec" class="section level3" number="9.7.1">
+<h3>
+<span class="header-section-number">9.7.1</span> Initializing <code>vimshift</code> through its <code>tmle3_Spec</code><a class="anchor" aria-label="anchor" href="#initializing-vimshift-through-its-tmle3_spec"><i class="fas fa-link"></i></a>
+</h3>
+<p>To start, we will initialize a specification for the TMLE of our parameter of
+interest (called a <code>tmle3_Spec</code> in the <code>tlverse</code> nomenclature) simply by calling
+<code>tmle_shift</code>. We specify the argument <code>shift_grid = seq(-1, 1, by = 1)</code>
+when initializing the <code>tmle3_Spec</code> object to communicate that we’re interested
+in assessing the mean counterfactual outcome over a grid of shifts <span class="math inline">\(\delta \in \{-1, 0, 1\}\)</span> on the scale of the treatment <span class="math inline">\(A\)</span> (n.b., we make an arbitrary
+choice of shift values for this example).</p>
+<div class="sourceCode" id="cb167"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># what's the grid of shifts we wish to consider?</span>
+<span class="va">delta_grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html">seq</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span>
+
+<span class="co"># initialize a tmle specification</span>
+<span class="va">tmle_spec</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tlverse.org/tmle3shift/reference/tmle_vimshift_delta.html">tmle_vimshift_delta</a></span><span class="op">(</span>
+  shift_grid <span class="op">=</span> <span class="va">delta_grid</span>,
+  max_shifted_ratio <span class="op">=</span> <span class="fl">2</span>
+<span class="op">)</span></code></pre></div>
+<p>As seen above, the <code>tmle_vimshift</code> specification object (like all <code>tmle3_Spec</code>
+objects) does <em>not</em> store the data for our specific analysis of interest. Later,
+we’ll see that passing a data object directly to the <code>tmle3</code> wrapper function,
+alongside the instantiated <code>tmle_spec</code>, will serve to construct a <code>tmle3_Task</code>
+object internally (see the <code>tmle3</code> documentation for details).</p>
+</div>
+<div id="targeted-estimation-of-stochastic-interventions-effects-1" class="section level3" number="9.7.2">
+<h3>
+<span class="header-section-number">9.7.2</span> Targeted Estimation of Stochastic Interventions Effects<a class="anchor" aria-label="anchor" href="#targeted-estimation-of-stochastic-interventions-effects-1"><i class="fas fa-link"></i></a>
+</h3>
+<p>One may walk through the step-by-step procedure for fitting the TML estimator
+of the mean counterfactual outcome under each shift in the grid, using the
+machinery exposed by the <a href="https://tmle3.tlverse.org/"><code>tmle3</code> R package</a>.</p>
+<p>One may invoke the <code>tmle3</code> wrapper function (a user-facing convenience utility)
+to fit the series of TML estimators (one for each parameter defined by the grid
+delta) in a single function call:</p>
+<div class="sourceCode" id="cb168"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb168-1"><a href="shift.html#cb168-1" aria-hidden="true" tabindex="-1"></a>tmle_fit <span class="ot">&lt;-</span> <span class="fu">tmle3</span>(tmle_spec, data, node_list, learner_list)</span>
+<span id="cb168-2"><a href="shift.html#cb168-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb168-3"><a href="shift.html#cb168-3" aria-hidden="true" tabindex="-1"></a>Iter<span class="sc">:</span> <span class="dv">1</span> fn<span class="sc">:</span> <span class="fl">547.4323</span>     Pars<span class="sc">:</span>  <span class="fl">0.9998973</span> <span class="fl">0.0001027</span></span>
+<span id="cb168-4"><a href="shift.html#cb168-4" aria-hidden="true" tabindex="-1"></a>Iter<span class="sc">:</span> <span class="dv">2</span> fn<span class="sc">:</span> <span class="fl">547.4323</span>     Pars<span class="sc">:</span>  <span class="fl">0.99997059</span> <span class="fl">0.00002941</span></span>
+<span id="cb168-5"><a href="shift.html#cb168-5" aria-hidden="true" tabindex="-1"></a>solnp<span class="sc">-</span><span class="ot">-&gt;</span> Completed <span class="cf">in</span> <span class="dv">2</span> iterations</span>
+<span id="cb168-6"><a href="shift.html#cb168-6" aria-hidden="true" tabindex="-1"></a>tmle_fit</span>
+<span id="cb168-7"><a href="shift.html#cb168-7" aria-hidden="true" tabindex="-1"></a>A tmle3_Fit that took <span class="dv">1</span> <span class="fu">step</span>(s)</span>
+<span id="cb168-8"><a href="shift.html#cb168-8" aria-hidden="true" tabindex="-1"></a>         type          param init_est tmle_est       se  lower  upper</span>
+<span id="cb168-9"><a href="shift.html#cb168-9" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>        TSM  E[Y_{A<span class="ot">=</span><span class="cn">NULL</span>}]   <span class="fl">0.5681</span>   <span class="fl">0.5718</span> <span class="fl">0.021416</span> <span class="fl">0.5299</span> <span class="fl">0.6138</span></span>
+<span id="cb168-10"><a href="shift.html#cb168-10" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span><span class="sc">:</span>        TSM  E[Y_{A<span class="ot">=</span><span class="cn">NULL</span>}]   <span class="fl">0.6975</span>   <span class="fl">0.6975</span> <span class="fl">0.022996</span> <span class="fl">0.6524</span> <span class="fl">0.7426</span></span>
+<span id="cb168-11"><a href="shift.html#cb168-11" aria-hidden="true" tabindex="-1"></a><span class="dv">3</span><span class="sc">:</span>        TSM  E[Y_{A<span class="ot">=</span><span class="cn">NULL</span>}]   <span class="fl">0.8167</span>   <span class="fl">0.8155</span> <span class="fl">0.017110</span> <span class="fl">0.7819</span> <span class="fl">0.8490</span></span>
+<span id="cb168-12"><a href="shift.html#cb168-12" aria-hidden="true" tabindex="-1"></a><span class="dv">4</span><span class="sc">:</span> MSM_linear <span class="fu">MSM</span>(intercept)   <span class="fl">0.6941</span>   <span class="fl">0.6949</span> <span class="fl">0.019107</span> <span class="fl">0.6575</span> <span class="fl">0.7324</span></span>
+<span id="cb168-13"><a href="shift.html#cb168-13" aria-hidden="true" tabindex="-1"></a><span class="dv">5</span><span class="sc">:</span> MSM_linear     <span class="fu">MSM</span>(slope)   <span class="fl">0.1243</span>   <span class="fl">0.1218</span> <span class="fl">0.008603</span> <span class="fl">0.1049</span> <span class="fl">0.1387</span></span>
+<span id="cb168-14"><a href="shift.html#cb168-14" aria-hidden="true" tabindex="-1"></a>   psi_transformed lower_transformed upper_transformed</span>
+<span id="cb168-15"><a href="shift.html#cb168-15" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>          <span class="fl">0.5718</span>            <span class="fl">0.5299</span>            <span class="fl">0.6138</span></span>
+<span id="cb168-16"><a href="shift.html#cb168-16" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span><span class="sc">:</span>          <span class="fl">0.6975</span>            <span class="fl">0.6524</span>            <span class="fl">0.7426</span></span>
+<span id="cb168-17"><a href="shift.html#cb168-17" aria-hidden="true" tabindex="-1"></a><span class="dv">3</span><span class="sc">:</span>          <span class="fl">0.8155</span>            <span class="fl">0.7819</span>            <span class="fl">0.8490</span></span>
+<span id="cb168-18"><a href="shift.html#cb168-18" aria-hidden="true" tabindex="-1"></a><span class="dv">4</span><span class="sc">:</span>          <span class="fl">0.6949</span>            <span class="fl">0.6575</span>            <span class="fl">0.7324</span></span>
+<span id="cb168-19"><a href="shift.html#cb168-19" aria-hidden="true" tabindex="-1"></a><span class="dv">5</span><span class="sc">:</span>          <span class="fl">0.1218</span>            <span class="fl">0.1049</span>            <span class="fl">0.1387</span></span></code></pre></div>
+<p><em>Remark</em>: The <code>print</code> method of the resultant <code>tmle_fit</code> object conveniently
+displays the results from computing our TML estimator.</p>
+</div>
+<div id="estimation-and-inference-with-marginal-structural-models" class="section level3" number="9.7.3">
+<h3>
+<span class="header-section-number">9.7.3</span> Estimation and Inference with Marginal Structural Models<a class="anchor" aria-label="anchor" href="#estimation-and-inference-with-marginal-structural-models"><i class="fas fa-link"></i></a>
+</h3>
+<p>It can be challenging to select a value of the shift parameter <span class="math inline">\(\delta\)</span> in
+advance. One solution is to specify a <em>grid</em> of such shifts <span class="math inline">\(\delta\)</span> to be used
+in defining a set of related stochastic interventions <span class="citation">(<a href="references.html#ref-hejazi2020efficient" role="doc-biblioref">Hejazi, van der Laan, <em>et al.</em>, 2020</a>)</span>.
+When we consider estimating the counterfactual mean <span class="math inline">\(\psi_n\)</span> under several
+choices of <span class="math inline">\(\delta\)</span>, a single summary measure of these estimated quantities can
+be established through working marginal structural models (MSMs). Summarizing
+the estimates <span class="math inline">\(\psi_n\)</span> through a working MSM allows for inference on the <em>trend</em>
+appearing through the grid in <span class="math inline">\(\delta\)</span>, which may be evaluating through a simple
+hypothesis test on the slope parameter <span class="math inline">\(\beta_0\)</span> of the working MSM. Consider a
+grid of <span class="math inline">\(\delta\)</span>, <span class="math inline">\(\{\delta_1, \ldots, \delta_k\}\)</span>, corresponding to
+counterfactual means <span class="math inline">\(\{\psi_{\delta_1}, \ldots, \psi_{\delta_k}\}\)</span>. Next, let
+<span class="math inline">\(\psi(\delta) = (\psi_{\delta}: \delta)\)</span> denote the grid of
+counterfactual means in the grid defined by <span class="math inline">\(\delta\)</span> and let <span class="math inline">\(\psi_n(\delta)\)</span>
+denote TML estimators of <span class="math inline">\(\psi(\delta)\)</span>. The MSM summarizing the change in
+<span class="math inline">\(\psi_n\)</span> as a function of <span class="math inline">\(\delta\)</span> may be expressed <span class="math inline">\(m_{\beta}(\psi_{\delta}) = \beta_0 + \beta_1 \delta\)</span>. This simple working model summarizes the changes in
+<span class="math inline">\(\psi_{\delta}\)</span> as a function of the parameters <span class="math inline">\((\beta_0, \beta_1)\)</span>, where the
+latter is the slope of the line resulting from projecting the counterfactual
+means onto this simple two-parameter working model.</p>
+<p>A more general expression for the MSM <span class="math inline">\(m_{\beta}(\delta)\)</span> is <span class="math inline">\(\beta_0 = \text{argmin}_{\beta} \sum_{\delta}(\psi_{\delta}(P_0) - m_{\beta}(\delta))^2 h(\delta)\)</span>, the solution to the estimating equation
+<span class="math display">\[u(\beta, (\psi_{\delta}: \delta)) = \sum_{\delta}h(\delta)
+\left(\psi_{\delta}(P_0) - m_{\beta}(\delta) \right) \frac{d}{d\beta}
+m_{\beta}(\delta) = 0.\]</span>
+<!--
+This then leads to the following expansion
+$$\beta(\vec{\psi}_n) - \beta(\vec{\psi}_0) \approx -\frac{d}{d\beta}
+  u(\beta_0, \vec{\psi}_0)^{-1} \frac{d}{d\psi} u(\beta_0, \psi_0)
+  (\vec{\psi}_n - \vec{\psi}_0),$$
+where we have
+$$\frac{d}{d\beta} u(\beta, \psi) = -\sum_{\delta} h(\delta) \frac{d}{d\beta}
+m_{\beta}(\delta)^t \frac{d}{d\beta} m_{\beta}(\delta)
+-\sum_{\delta} h(\delta) m_{\beta}(\delta) \frac{d^2}{d\beta^2}
+m_{\beta}(\delta),$$
+which, in the case of an MSM that is a linear model (since
+$\frac{d^2}{d\beta^2} m_{\beta}(\delta) = 0$), reduces simply to
+$$\frac{d}{d\beta} u(\beta, \psi) = -\sum_{\delta} h(\delta) \frac{d}{d\beta}
+m_{\beta}(\delta)^t \frac{d}{d\beta} m_{\beta}(\delta),$$
+and
+$$\frac{d}{d\psi}u(\beta, \psi)(\psi_n - \psi_0) = \sum_{\delta} h(\delta)
+\frac{d}{d\beta} m_{\beta}(\delta) (\psi_n - \psi_0)(\delta),$$
+which we may write in terms of the efficient influence function (EIF) of $\psi$
+by using the first order approximation $(\psi_n - \psi_0)(\delta) =
+\frac{1}{n}\sum_{i = 1}^n \text{EIF}_{\psi_{\delta}}(O_i)$,
+where $\text{EIF}_{\psi_{\delta}}$ is the efficient influence function (EIF) of
+$\vec{\psi}$.
+-->
+Now, say, <span class="math inline">\(\psi = (\psi(\delta): \delta)\)</span> is d-dimensional. We may express the
+EIF of the MSM parameter <span class="math inline">\(\beta_0\)</span> in terms of the EIFs of the individual
+counterfactual means:
+<span class="math display" id="eq:eif-msm-shift">\[\begin{align}
+   D_{\beta}(O) = &amp;\left(\sum_{\delta} h(\delta) \frac{d}{d\beta}
+   m_{\beta}(\delta) \frac{d}{d\beta} m_{\beta}(\delta)^t \right)^{-1}
+   \\ \nonumber
+   &amp;\sum_{\delta} h(\delta) \frac{d}{d\beta} m_{\beta}(\delta)
+   D_{\psi_{\delta}}(O).
+   \tag{9.14}
+\end{align}\]</span>
+Here, in Equation <a href="shift.html#eq:eif-msm-shift">(9.14)</a>, the first component is of dimension
+<span class="math inline">\(d \times d\)</span> and the second is of dimension <span class="math inline">\(d \times 1\)</span>. In the above, we
+assume a linear working MSM; however, an analogous procedure may be applied for
+working MSMs based on GLMs.</p>
+<p>Above, we utilized a straightforward application of the delta method to obtain
+the EIF of <span class="math inline">\(\beta\)</span>. Inference for this parameter of a working MSM follows from
+evaluation of its EIF <span class="math inline">\(D_{\beta}\)</span>, which is expressed in terms of the EIFs of
+each of the corresponding estimates <span class="math inline">\(\psi_n(\delta)\)</span>. The limit distribution of
+<span class="math inline">\(\beta_n\)</span> may be expressed <span class="math display">\[\sqrt{n}(\beta_n - \beta_0) \to N(0, \Sigma),\]</span>
+where <span class="math inline">\(\Sigma\)</span> is the empirical covariance matrix of <span class="math inline">\(D_{\beta}(O)\)</span>. With this,
+we can not only estimate the trend through the counterfactual means across a
+grid in <span class="math inline">\(\delta\)</span>, but we can also evaluate whether the slope estimate is
+statistically significant, in terms of hypothesis tests of the form <span class="math inline">\((H_0: \beta_0 = 0; H_1: \beta_0 \neq 0)\)</span> and equivalent Wald-style confidence
+intervals. Note that the estimator <span class="math inline">\(\beta_n\)</span> of the parameter <span class="math inline">\(\beta_0\)</span> of the
+MSM is asymptotically linear (and, in fact, a TML estimator) as a consequence of
+its construction from individual TML estimators.</p>
+<p>The strategy just discussed constructs an estimate <span class="math inline">\(\beta_n\)</span> of the working MSM
+slope <span class="math inline">\(\beta_0\)</span> by first evaluating the TML estimates of the counterfactual
+means <span class="math inline">\(\psi_{n,\delta}\)</span> in the grid <span class="math inline">\(\{\delta_1, \ldots, \delta_k\}\)</span>; however,
+this is not necessarily the best strategy, especially when giving consideration
+to estimation stability in small samples. In smaller samples, it may be prudent
+to perform TML estimation targeting directly the parameter <span class="math inline">\(\beta_0\)</span>, as opposed
+to constructing it by applying the delta method to several independently
+targeted TML estimates.</p>
+<p>To do so, consider a TML estimator targeting <span class="math inline">\(\beta_0\)</span> (the parameter of the
+working MSM <span class="math inline">\(m_{\beta}\)</span>), which uses a targeting update step of the form
+<span class="math inline">\(\overline{Q}_{n, \epsilon}(A,W) = \overline{Q}_n(A,W) + \epsilon (H_{\beta_0}(g), H_{\beta_1}(g))\)</span>, for all <span class="math inline">\(\delta\)</span>, where <span class="math inline">\(H_{\beta_0}(g)\)</span> is
+the auxiliary covariate for <span class="math inline">\(\beta_0\)</span> (the intercept) and <span class="math inline">\(H_{\beta}(g)\)</span> is the
+auxiliary covariate for <span class="math inline">\(\beta_1\)</span> (the slope). Note that the forms of these
+auxiliary covariates depend on the EIF <span class="math inline">\(D_{\beta}\)</span>. Such a TML estimator avoids
+estimating each of the <span class="math inline">\(\psi_{\delta}\)</span> in the grid directly, instead cleverly
+concatenating their auxiliary covariates into those appropriate for <span class="math inline">\(\beta_0\)</span>
+and <span class="math inline">\(\beta_1\)</span>. To construct a targeted maximum likelihood estimator that
+directly targets the parameters of the working MSM, we may use the
+<code>tmle_vimshift_msm</code> Spec (instead of the <code>tmle_vimshift_delta</code> Spec).</p>
+<div class="sourceCode" id="cb169"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># initialize a tmle specification</span>
+<span class="va">tmle_msm_spec</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tlverse.org/tmle3shift/reference/tmle_vimshift_msm.html">tmle_vimshift_msm</a></span><span class="op">(</span>
+  shift_grid <span class="op">=</span> <span class="va">delta_grid</span>,
+  max_shifted_ratio <span class="op">=</span> <span class="fl">2</span>
+<span class="op">)</span>
+
+<span class="co"># fit the TML estimator and examine the results</span>
+<span class="va">tmle_msm_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="http://tlverse.org/tmle3/reference/tmle3.html">tmle3</a></span><span class="op">(</span><span class="va">tmle_msm_spec</span>, <span class="va">data</span>, <span class="va">node_list</span>, <span class="va">learner_list</span><span class="op">)</span>
+<span class="va">tmle_msm_fit</span></code></pre></div>
+</div>
+<div id="example-with-the-wash-benefits-data" class="section level3" number="9.7.4">
+<h3>
+<span class="header-section-number">9.7.4</span> Example with the WASH Benefits Data<a class="anchor" aria-label="anchor" href="#example-with-the-wash-benefits-data"><i class="fas fa-link"></i></a>
+</h3>
+<p>To complete our walk through, let’s turn to using stochastic interventions to
+investigate the data from the WASH Benefits trial. To start, let’s load the
+data, convert all columns to be of class <code>numeric</code>, and take a quick look at it</p>
+<div class="sourceCode" id="cb170"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb170-1"><a href="shift.html#cb170-1" aria-hidden="true" tabindex="-1"></a>washb_data <span class="ot">&lt;-</span> <span class="fu">fread</span>(</span>
+<span id="cb170-2"><a href="shift.html#cb170-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">paste0</span>(</span>
+<span id="cb170-3"><a href="shift.html#cb170-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"https://raw.githubusercontent.com/tlverse/tlverse-data/master/"</span>,</span>
+<span id="cb170-4"><a href="shift.html#cb170-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"wash-benefits/washb_data.csv"</span></span>
+<span id="cb170-5"><a href="shift.html#cb170-5" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb170-6"><a href="shift.html#cb170-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">stringsAsFactors =</span> <span class="cn">TRUE</span></span>
+<span id="cb170-7"><a href="shift.html#cb170-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb170-8"><a href="shift.html#cb170-8" aria-hidden="true" tabindex="-1"></a>washb_data <span class="ot">&lt;-</span> washb_data[<span class="sc">!</span><span class="fu">is.na</span>(momage), <span class="fu">lapply</span>(.SD, as.numeric)]</span>
+<span id="cb170-9"><a href="shift.html#cb170-9" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(washb_data, <span class="dv">3</span>)</span>
+<span id="cb170-10"><a href="shift.html#cb170-10" aria-hidden="true" tabindex="-1"></a>     whz tr fracode month aged sex momage momedu momheight hfiacat Nlt18 Ncomp</span>
+<span id="cb170-11"><a href="shift.html#cb170-11" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>  <span class="fl">0.00</span>  <span class="dv">1</span>       <span class="dv">4</span>     <span class="dv">9</span>  <span class="dv">268</span>   <span class="dv">2</span>     <span class="dv">30</span>      <span class="dv">2</span>     <span class="fl">146.4</span>       <span class="dv">1</span>     <span class="dv">3</span>    <span class="dv">11</span></span>
+<span id="cb170-12"><a href="shift.html#cb170-12" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span><span class="sc">:</span> <span class="sc">-</span><span class="fl">1.16</span>  <span class="dv">1</span>       <span class="dv">4</span>     <span class="dv">9</span>  <span class="dv">286</span>   <span class="dv">2</span>     <span class="dv">25</span>      <span class="dv">2</span>     <span class="fl">148.8</span>       <span class="dv">3</span>     <span class="dv">2</span>     <span class="dv">4</span></span>
+<span id="cb170-13"><a href="shift.html#cb170-13" aria-hidden="true" tabindex="-1"></a><span class="dv">3</span><span class="sc">:</span> <span class="sc">-</span><span class="fl">1.05</span>  <span class="dv">1</span>      <span class="dv">20</span>     <span class="dv">9</span>  <span class="dv">264</span>   <span class="dv">2</span>     <span class="dv">25</span>      <span class="dv">2</span>     <span class="fl">152.2</span>       <span class="dv">1</span>     <span class="dv">1</span>    <span class="dv">10</span></span>
+<span id="cb170-14"><a href="shift.html#cb170-14" aria-hidden="true" tabindex="-1"></a>   watmin elec floor walls roof asset_wardrobe asset_table asset_chair</span>
+<span id="cb170-15"><a href="shift.html#cb170-15" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>      <span class="dv">0</span>    <span class="dv">1</span>     <span class="dv">0</span>     <span class="dv">1</span>    <span class="dv">1</span>              <span class="dv">0</span>           <span class="dv">1</span>           <span class="dv">1</span></span>
+<span id="cb170-16"><a href="shift.html#cb170-16" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span><span class="sc">:</span>      <span class="dv">0</span>    <span class="dv">1</span>     <span class="dv">0</span>     <span class="dv">1</span>    <span class="dv">1</span>              <span class="dv">0</span>           <span class="dv">1</span>           <span class="dv">0</span></span>
+<span id="cb170-17"><a href="shift.html#cb170-17" aria-hidden="true" tabindex="-1"></a><span class="dv">3</span><span class="sc">:</span>      <span class="dv">0</span>    <span class="dv">0</span>     <span class="dv">0</span>     <span class="dv">1</span>    <span class="dv">1</span>              <span class="dv">0</span>           <span class="dv">0</span>           <span class="dv">1</span></span>
+<span id="cb170-18"><a href="shift.html#cb170-18" aria-hidden="true" tabindex="-1"></a>   asset_khat asset_chouki asset_tv asset_refrig asset_bike asset_moto</span>
+<span id="cb170-19"><a href="shift.html#cb170-19" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>          <span class="dv">1</span>            <span class="dv">0</span>        <span class="dv">1</span>            <span class="dv">0</span>          <span class="dv">0</span>          <span class="dv">0</span></span>
+<span id="cb170-20"><a href="shift.html#cb170-20" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span><span class="sc">:</span>          <span class="dv">1</span>            <span class="dv">1</span>        <span class="dv">0</span>            <span class="dv">0</span>          <span class="dv">0</span>          <span class="dv">0</span></span>
+<span id="cb170-21"><a href="shift.html#cb170-21" aria-hidden="true" tabindex="-1"></a><span class="dv">3</span><span class="sc">:</span>          <span class="dv">0</span>            <span class="dv">1</span>        <span class="dv">0</span>            <span class="dv">0</span>          <span class="dv">0</span>          <span class="dv">0</span></span>
+<span id="cb170-22"><a href="shift.html#cb170-22" aria-hidden="true" tabindex="-1"></a>   asset_sewmach asset_mobile</span>
+<span id="cb170-23"><a href="shift.html#cb170-23" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>             <span class="dv">0</span>            <span class="dv">1</span></span>
+<span id="cb170-24"><a href="shift.html#cb170-24" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span><span class="sc">:</span>             <span class="dv">0</span>            <span class="dv">1</span></span>
+<span id="cb170-25"><a href="shift.html#cb170-25" aria-hidden="true" tabindex="-1"></a><span class="dv">3</span><span class="sc">:</span>             <span class="dv">0</span>            <span class="dv">1</span></span></code></pre></div>
+<p>Next, we specify our NPSEM via the <code>node_list</code> object. For our example analysis,
+we’ll consider the outcome to be the weight-for-height Z-score (as in previous
+chapters), the intervention of interest to be the mother’s age at time of
+child’s birth, and take all other covariates to be potential confounders.</p>
+<div class="sourceCode" id="cb171"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">node_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span>
+  W <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html">names</a></span><span class="op">(</span><span class="va">washb_data</span><span class="op">)</span><span class="op">[</span><span class="op">!</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html">names</a></span><span class="op">(</span><span class="va">washb_data</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/match.html">%in%</a></span>
+    <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"whz"</span>, <span class="st">"momage"</span><span class="op">)</span><span class="op">)</span><span class="op">]</span>,
+  A <span class="op">=</span> <span class="st">"momage"</span>,
+  Y <span class="op">=</span> <span class="st">"whz"</span>
+<span class="op">)</span></code></pre></div>
+<p>Were we to consider the counterfactual weight-for-height Z-score under shifts in
+the age of the mother at child’s birth, how would we interpret estimates of our
+parameter? To simplify our interpretation, consider a shift of just a year in
+the mother’s age (i.e., <span class="math inline">\(\delta = 1\)</span>); in this setting, a stochastic
+intervention would correspond to a policy advocating that potential mothers
+defer having a child for a single calendar year, possibly implemented through an
+encouragement design deployed in a clinical setting.</p>
+<p>For this example, we’ll use the variable importance strategy of considering a
+grid of stochastic interventions to evaluate the weight-for-height Z-score under
+a shift in the mother’s age down by two years (<span class="math inline">\(\delta = -2\)</span>) or up by two years
+(<span class="math inline">\(\delta = 2\)</span>). To do this, we simply initialize a <code>Spec</code> <code>tmle_vimshift_delta</code>
+just as we did in a previous example:</p>
+<div class="sourceCode" id="cb172"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># initialize a tmle specification for the variable importance parameter</span>
+<span class="va">washb_vim_spec</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tlverse.org/tmle3shift/reference/tmle_vimshift_delta.html">tmle_vimshift_delta</a></span><span class="op">(</span>
+  shift_grid <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span>,
+  max_shifted_ratio <span class="op">=</span> <span class="fl">2</span>
+<span class="op">)</span></code></pre></div>
+<p>Prior to running our analysis, we’ll modify the <code>learner_list</code> object we had
+created such that the density estimation procedure we rely on will be only the
+location-scale conditional density estimation procedure, as the nonparametric
+conditional density approach based on the highly adaptive lasso <span class="citation">(<a href="references.html#ref-benkeser2016hal" role="doc-biblioref">Benkeser and van der Laan, 2016</a>; <a href="references.html#ref-coyle2020hal9001" role="doc-biblioref">Coyle <em>et al.</em>, 2022</a>; <a href="references.html#ref-diaz2011super" role="doc-biblioref">Dı́az and van der Laan, 2011</a>; <a href="references.html#ref-hejazi2020hal9001" role="doc-biblioref">Hejazi, Coyle, <em>et al.</em>, 2020</a>; <a href="references.html#ref-hejazi2020haldensify" role="doc-biblioref">Hejazi, Benkeser, <em>et al.</em>, 2022</a>)</span>
+is currently unable to accommodate larger datasets.</p>
+<div class="sourceCode" id="cb173"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># we need to turn on cross-validation for the HOSE learner</span>
+<span class="va">cv_hose_hal_lrnr</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_cv.html">Lrnr_cv</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>
+  learner <span class="op">=</span> <span class="va">hose_hal_lrnr</span>,
+  full_fit <span class="op">=</span> <span class="cn">TRUE</span>
+<span class="op">)</span>
+
+<span class="co"># modify learner list, using existing SL for Q fit</span>
+<span class="va">learner_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">sl_reg_lrnr</span>, A <span class="op">=</span> <span class="va">cv_hose_hal_lrnr</span><span class="op">)</span></code></pre></div>
+<p>Having made the above preparations, we’re now ready to estimate the
+counterfactual mean of the weight-for-height Z-score under a small grid of
+shifts in the mother’s age at child’s birth. Just as before, we do this through
+a simple call to our <code>tmle3</code> wrapper function:</p>
+<div class="sourceCode" id="cb174"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">washb_tmle_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="http://tlverse.org/tmle3/reference/tmle3.html">tmle3</a></span><span class="op">(</span><span class="va">washb_vim_spec</span>, <span class="va">washb_data</span>, <span class="va">node_list</span>, <span class="va">learner_list</span><span class="op">)</span>
+<span class="va">washb_tmle_fit</span></code></pre></div>
+<hr>
+</div>
+</div>
+<div id="exercises-4" class="section level2" number="9.8">
+<h2>
+<span class="header-section-number">9.8</span> Exercises<a class="anchor" aria-label="anchor" href="#exercises-4"><i class="fas fa-link"></i></a>
+</h2>
+<div id="the-ideas-in-action" class="section level3" number="9.8.1">
+<h3>
+<span class="header-section-number">9.8.1</span> The Ideas in Action<a class="anchor" aria-label="anchor" href="#the-ideas-in-action"><i class="fas fa-link"></i></a>
+</h3>
+<div class="exercise">
+<p><span id="exr:unlabeled-div-4" class="exercise"><strong>Exercise 9.1  </strong></span>Set the <code>sl3</code> library of algorithms for the Super Learner to a simple,
+interpretable library and use this new library to estimate the counterfactual
+mean of mother’s age at child’s birth (<code>momage</code>) under a shift <span class="math inline">\(\delta = 0\)</span>.
+What does this counterfactual mean equate to in terms of the observed data?</p>
+</div>
+<div class="solution">
+<p><span id="unlabeled-div-5" class="solution"><em>Solution</em>. </span>Forthcoming</p>
+</div>
+<div class="exercise">
+<p><span id="exr:unlabeled-div-6" class="exercise"><strong>Exercise 9.2  </strong></span>Using a grid of values of the shift parameter <span class="math inline">\(\delta\)</span> (e.g., <span class="math inline">\(\{-1, 0, +1\}\)</span>),
+repeat the analysis on the variable chosen in the preceding question,
+summarizing the trend for this sequence of shifts using a marginal structural
+model.</p>
+</div>
+<div class="solution">
+<p><span id="unlabeled-div-7" class="solution"><em>Solution</em>. </span>Forthcoming</p>
+</div>
+<div class="exercise">
+<p><span id="exr:unlabeled-div-8" class="exercise"><strong>Exercise 9.3  </strong></span>Repeat the preceding analysis, using the same grid of shifts, but instead
+directly targeting the parameters of the marginal structural model. Interpret
+the results – that is, what does the slope of the marginal structural model
+tell us about the trend across the chosen sequence of shifts?</p>
+</div>
+<div class="solution">
+<p><span id="unlabeled-div-9" class="solution"><em>Solution</em>. </span>Forthcoming</p>
+</div>
+</div>
+<div id="review-of-key-concepts-2" class="section level3" number="9.8.2">
+<h3>
+<span class="header-section-number">9.8.2</span> Review of Key Concepts<a class="anchor" aria-label="anchor" href="#review-of-key-concepts-2"><i class="fas fa-link"></i></a>
+</h3>
+<div class="exercise">
+<p><span id="exr:unlabeled-div-10" class="exercise"><strong>Exercise 9.4  </strong></span>Describe two (equivalent) ways in which the causal effects of stochastic
+interventions may be interpreted.</p>
+</div>
+<div class="solution">
+<p><span id="unlabeled-div-11" class="solution"><em>Solution</em>. </span>Forthcoming</p>
+</div>
+<div class="exercise">
+<p><span id="exr:unlabeled-div-12" class="exercise"><strong>Exercise 9.5  </strong></span>How can the information provided by estimates across several shifts <span class="math inline">\(\{ \delta_1, \ldots, \delta_k \}\)</span> and the marginal structural model parameter
+summarizing the trend in <span class="math inline">\(\delta\)</span> be used to enrich the interpretation of our
+findings?</p>
+</div>
+<div class="solution">
+<p><span id="unlabeled-div-13" class="solution"><em>Solution</em>. </span>Forthcoming</p>
+</div>
+<div class="exercise">
+<p><span id="exr:unlabeled-div-14" class="exercise"><strong>Exercise 9.6  </strong></span>What advantages, if any, are there to targeting directly the parameters of a
+marginal structural model?</p>
+</div>
+<div class="solution">
+<p><span id="unlabeled-div-15" class="solution"><em>Solution</em>. </span>Forthcoming</p>
+</div>
+<!--
+- @haneuse2013estimation characterization of stochastic interventions as
+  \textit{modified treatment policies} (MTPs).
+- Assumption of \textit{piecewise smooth invertibility} allows for the
+  intervention distribution of any MTP to be recovered:
+  \begin{equation*}
+    g_{0, \delta}(a \mid w) = \sum_{j = 1}^{J(w)} I_{\delta, j} \{h_j(a, w),
+    w\} g_0\{h_j(a, w) \mid w\} h^{\prime}_j(a,w)
+  \end{equation*}
+- Such intervention policies account for the natural value of the
+  intervention $A$ directly yet are interpretable as the imposition of an
+  altered intervention mechanism.
+- Piecewise smooth invertibility: This assumption ensures that we can
+  use the change of variable formula when computing integrals over $A$ and
+  it is useful to study the estimators that we propose in this paper.
+
+- __Asymptotic linearity:__
+  \begin{equation*}
+    \Psi(P_n^{\star}) - \Psi(P_0) = \frac{1}{n} \sum_{i = 1}^{n} D(P_0)(X_i) +
+    o_P\left(\frac{1}{\sqrt{n}}\right)
+  \end{equation*}
+- Gaussian limiting distribution:
+  \begin{equation*}
+    \sqrt{n}(\Psi(P_n^{\star}) - \Psi(P_0)) \to N(0, Var(D(P_0)(O)))
+  \end{equation*}
+- Statistical inference:
+  \begin{equation*}
+    \text{Wald-type CI}: \Psi(P_n^{\star}) \pm z_{\alpha} \cdot
+    \frac{\sigma_n}{\sqrt{n}},
+  \end{equation*}
+  where $\sigma_n^2$ is computed directly via
+  $\sigma_n^2 = \frac{1}{n} \sum_{i = 1}^{n} D^2(\cdot)(O_i)$.
+
+Under the additional condition that the remainder term $R(\hat{P}^*, P_0)$
+decays as $o_P \left( \frac{1}{\sqrt{n}} \right),$ we have that
+$\Psi_n - \Psi_0 = (P_n - P_0) \cdot D(P_0) + o_P
+\left( \frac{1}{\sqrt{n}} \right),$ which, by a central limit theorem,
+establishes a Gaussian limiting distribution for the estimator, with variance
+$V(D(P_0))$, the variance of the efficient influence function
+when $\Psi$ admits an asymptotically linear representation.
+
+The above implies that $\Psi_n$ is a $\sqrt{n}$-consistent estimator of $\Psi$,
+that it is asymptotically normal (as given above), and that it is locally
+efficient. This allows us to build Wald-type confidence intervals, where
+$\sigma_n^2$ is an estimator of $V(D(P_0))$. The estimator $\sigma_n^2$
+may be obtained using the bootstrap or computed directly via
+$\sigma_n^2 = \frac{1}{n} \sum_{i = 1}^{n} D^2(\bar{Q}_n^{\star}, g_n)(O_i)$
+
+We obtain semiparametric-efficient estimation and robust inference in the
+nonparametric model $\M$ by solving the efficient influence function.
+
+1. If $D(\bar{Q}_n^{\star}, g_n)$ converges to $D(P_0)$ in $L_2(P_0)$ norm.
+2. The size of the class of functions $\bar{Q}_n^{\star}$ and $g_n$ is bounded
+   (technically, $\exists \mathcal{F}$ st
+   $D(\bar{Q}_n^{\star}, g_n) \in \mathcal{F}$ whp, where $\mathcal{F}$ is a
+   Donsker class)
+-->
+
+</div>
+</div>
+</div>
+  <div class="chapter-nav">
+<div class="prev"><a href="dynamic-and-optimal-individualized-treatment-regimes.html"><span class="header-section-number">8</span> Dynamic and Optimal Individualized Treatment Regimes</a></div>
+<div class="next"><a href="causal-mediation-analysis.html"><span class="header-section-number">10</span> Causal Mediation Analysis</a></div>
+</div></main><div class="col-md-3 col-lg-2 d-none d-md-block sidebar sidebar-chapter">
+    <nav id="toc" data-toggle="toc" aria-label="On this page"><h2>On this page</h2>
+      <ul class="nav navbar-nav">
+<li><a class="nav-link" href="#shift"><span class="header-section-number">9</span> Stochastic Treatment Regimes</a></li>
+<li><a class="nav-link" href="#why-stochastic-interventions"><span class="header-section-number">9.1</span> Why Stochastic Interventions?</a></li>
+<li><a class="nav-link" href="#data-structure-and-notation-1"><span class="header-section-number">9.2</span> Data Structure and Notation</a></li>
+<li><a class="nav-link" href="#defining-the-causal-effect-of-a-stochastic-intervention"><span class="header-section-number">9.3</span> Defining the Causal Effect of a Stochastic Intervention</a></li>
+<li><a class="nav-link" href="#estimating-the-causal-effect-of-a-stochastic-intervention"><span class="header-section-number">9.4</span> Estimating the Causal Effect of a Stochastic Intervention</a></li>
+<li><a class="nav-link" href="#interpreting-the-causal-effect-of-a-stochastic-intervention"><span class="header-section-number">9.5</span> Interpreting the Causal Effect of a Stochastic Intervention</a></li>
+<li>
+<a class="nav-link" href="#evaluating-the-causal-effect-of-a-stochastic-intervention"><span class="header-section-number">9.6</span> Evaluating the Causal Effect of a Stochastic Intervention</a><ul class="nav navbar-nav">
+<li><a class="nav-link" href="#example-with-simulated-data"><span class="header-section-number">9.6.1</span> Example with Simulated Data</a></li>
+<li><a class="nav-link" href="#targeted-estimation-of-stochastic-interventions-effects"><span class="header-section-number">9.6.2</span> Targeted Estimation of Stochastic Interventions Effects</a></li>
+</ul>
+</li>
+<li>
+<a class="nav-link" href="#selecting-stable-stochastic-interventions"><span class="header-section-number">9.7</span> Selecting Stable Stochastic Interventions</a><ul class="nav navbar-nav">
+<li><a class="nav-link" href="#initializing-vimshift-through-its-tmle3_spec"><span class="header-section-number">9.7.1</span> Initializing vimshift through its tmle3_Spec</a></li>
+<li><a class="nav-link" href="#targeted-estimation-of-stochastic-interventions-effects-1"><span class="header-section-number">9.7.2</span> Targeted Estimation of Stochastic Interventions Effects</a></li>
+<li><a class="nav-link" href="#estimation-and-inference-with-marginal-structural-models"><span class="header-section-number">9.7.3</span> Estimation and Inference with Marginal Structural Models</a></li>
+<li><a class="nav-link" href="#example-with-the-wash-benefits-data"><span class="header-section-number">9.7.4</span> Example with the WASH Benefits Data</a></li>
+</ul>
+</li>
+<li>
+<a class="nav-link" href="#exercises-4"><span class="header-section-number">9.8</span> Exercises</a><ul class="nav navbar-nav">
+<li><a class="nav-link" href="#the-ideas-in-action"><span class="header-section-number">9.8.1</span> The Ideas in Action</a></li>
+<li><a class="nav-link" href="#review-of-key-concepts-2"><span class="header-section-number">9.8.2</span> Review of Key Concepts</a></li>
+</ul>
+</li>
+</ul>
+
+      <div class="book-extra">
+        <ul class="list-unstyled">
+<li><a id="book-source" href="https://github.com/tlverse/tlverse-handbook/blob/master/09-tmle3shift.Rmd">View source <i class="fab fa-github"></i></a></li>
+          <li><a id="book-edit" href="https://github.com/tlverse/tlverse-handbook/edit/master/09-tmle3shift.Rmd">Edit this page <i class="fab fa-github"></i></a></li>
+        </ul>
+</div>
+    </nav>
+</div>
+
+</div>
+</div> <!-- .container -->
+
+<footer class="bg-primary text-light mt-5"><div class="container"><div class="row">
+
+  <div class="col-12 col-md-6 mt-3">
+    <p>"<strong>Targeted Learning in R</strong>: Causal Data Science with the tlverse Software Ecosystem" was written by Mark van der Laan, Jeremy Coyle, Nima Hejazi, Ivana Malenica, Rachael Phillips, Alan Hubbard. It was last built on August 08, 2023.</p>
+  </div>
+
+  <div class="col-12 col-md-6 mt-3">
+    <p>This book was built by the <a class="text-light" href="https://bookdown.org">bookdown</a> R package.</p>
+  </div>
+
+</div></div>
+</footer><!-- dynamically load mathjax for compatibility with self-contained --><script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script><script type="text/x-mathjax-config">const popovers = document.querySelectorAll('a.footnote-ref[data-toggle="popover"]');
+for (let popover of popovers) {
+  const div = document.createElement('div');
+  div.setAttribute('style', 'position: absolute; top: 0, left:0; width:0, height:0, overflow: hidden; visibility: hidden;');
+  div.innerHTML = popover.getAttribute('data-content');
+
+  var has_math = div.querySelector("span.math");
+  if (has_math) {
+    document.body.appendChild(div);
+    MathJax.Hub.Queue(["Typeset", MathJax.Hub, div]);
+    MathJax.Hub.Queue(function() {
+      popover.setAttribute('data-content', div.innerHTML);
+      document.body.removeChild(div);
+    })
+  }
+}
+</script>
+</body>
+</html>

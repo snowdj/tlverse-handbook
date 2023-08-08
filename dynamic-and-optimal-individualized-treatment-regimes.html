@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>Chapter 8 Dynamic and Optimal Individualized Treatment Regimes | Targeted Learning in R</title>
+<meta name="author" content="Mark van der Laan, Jeremy Coyle, Nima Hejazi, Ivana Malenica, Rachael Phillips, Alan Hubbard">
+<meta name="description" content="Ivana Malenica Based on the tmle3mopttx R package by Ivana Malenica, Jeremy Coyle, and Mark van der Laan.  8.1 Learning Objectives Differentiate dynamic and optimal dynamic treatment interventions...">
+<meta name="generator" content="bookdown 0.34.2 with bs4_book()">
+<meta property="og:title" content="Chapter 8 Dynamic and Optimal Individualized Treatment Regimes | Targeted Learning in R">
+<meta property="og:type" content="book">
+<meta property="og:url" content="https://tlverse.org/tlverse-handbook/dynamic-and-optimal-individualized-treatment-regimes.html">
+<meta property="og:description" content="Ivana Malenica Based on the tmle3mopttx R package by Ivana Malenica, Jeremy Coyle, and Mark van der Laan.  8.1 Learning Objectives Differentiate dynamic and optimal dynamic treatment interventions...">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Chapter 8 Dynamic and Optimal Individualized Treatment Regimes | Targeted Learning in R">
+<meta name="twitter:site" content="@tlverse">
+<meta name="twitter:description" content="Ivana Malenica Based on the tmle3mopttx R package by Ivana Malenica, Jeremy Coyle, and Mark van der Laan.  8.1 Learning Objectives Differentiate dynamic and optimal dynamic treatment interventions...">
+<!-- JS --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://kit.fontawesome.com/6ecbd6c532.js" crossorigin="anonymous"></script><script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="libs/bootstrap-4.6.0/bootstrap.min.css" rel="stylesheet">
+<script src="libs/bootstrap-4.6.0/bootstrap.bundle.min.js"></script><script src="libs/bs3compat-0.3.1/transition.js"></script><script src="libs/bs3compat-0.3.1/tabs.js"></script><script src="libs/bs3compat-0.3.1/bs3compat.js"></script><link href="libs/bs4_book-1.0.0/bs4_book.css" rel="stylesheet">
+<script src="libs/bs4_book-1.0.0/bs4_book.js"></script><script src="libs/kePrint-0.0.1/kePrint.js"></script><link href="libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+<link href="libs/bsTable-3.3.7/bootstrapTable.min.css" rel="stylesheet">
+<script src="libs/bsTable-3.3.7/bootstrapTable.js"></script>
+</head>
+<body>
+<span class="math inline">
+    \(\DeclareMathOperator{\expit}{expit}\)
+    \(\DeclareMathOperator{\logit}{logit}\)
+    \(\DeclareMathOperator*{\argmin}{\arg\!\min}\)
+    \(\newcommand{\indep}{\perp\!\!\!\perp}\)
+    \(\newcommand{\coloneqq}{\mathrel{=}}\)
+    \(\newcommand{\R}{\mathbb{R}}\)
+    \(\newcommand{\E}{\mathbb{E}}\)
+    \(\newcommand{\M}{\mathcal{M}}\)
+    \(\renewcommand{\P}{\mathbb{P}}\)
+    \(\newcommand{\I}{\mathbb{I}}\)
+    \(\newcommand{\1}{\mathbbm{1}}\)
+    </span>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- CSS --><style type="text/css">
+    
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  </style>
+<style type="text/css">
+    /* Used with Pandoc 2.11+ new --citeproc when CSL is used */
+    div.csl-bib-body { }
+    div.csl-entry {
+      clear: both;
+        }
+    .hanging div.csl-entry {
+      margin-left:2em;
+      text-indent:-2em;
+    }
+    div.csl-left-margin {
+      min-width:2em;
+      float:left;
+    }
+    div.csl-right-inline {
+      margin-left:2em;
+      padding-left:1em;
+    }
+    div.csl-indent {
+      margin-left: 2em;
+    }
+  </style>
+<link rel="stylesheet" href="css/style.css">
+<div class="container-fluid">
+<div class="row">
+  <header class="col-sm-12 col-lg-3 sidebar sidebar-book"><a class="sr-only sr-only-focusable" href="#content">Skip to main content</a>
+
+    <div class="d-flex align-items-start justify-content-between">
+      <h1>
+        <a href="index.html" title="Causal Data Science with the tlverse Software Ecosystem">Targeted Learning in R</a>:
+        <small class="text-muted">Causal Data Science with the tlverse Software Ecosystem</small>
+      </h1>
+      <button class="btn btn-outline-primary d-lg-none ml-2 mt-1" type="button" data-toggle="collapse" data-target="#main-nav" aria-expanded="true" aria-controls="main-nav"><i class="fas fa-bars"></i><span class="sr-only">Show table of contents</span></button>
+    </div>
+
+    <div id="main-nav" class="collapse-lg">
+      <form role="search">
+        <input id="search" class="form-control" type="search" placeholder="Search" aria-label="Search">
+</form>
+
+      <nav aria-label="Table of contents"><h2>Table of contents</h2>
+        <ul class="book-toc list-unstyled">
+<li><a class="" href="index.html">Welcome</a></li>
+<li><a class="" href="introduction.html">Introduction</a></li>
+<li class="book-part">Part 1: Preliminaries</li>
+<li><a class="" href="tlverse.html"><span class="header-section-number">1</span> About the tlverse</a></li>
+<li><a class="" href="setup.html"><span class="header-section-number">2</span> Software Setup</a></li>
+<li><a class="" href="example-datasets.html"><span class="header-section-number">3</span> Example Datasets</a></li>
+<li class="book-part">Part 2: Foundations</li>
+<li><a class="" href="roadmap.html"><span class="header-section-number">4</span> Learning from Data: A Roadmap</a></li>
+<li><a class="" href="origami.html"><span class="header-section-number">5</span> Cross-validation</a></li>
+<li><a class="" href="sl3.html"><span class="header-section-number">6</span> Super Learning</a></li>
+<li><a class="" href="tmle3.html"><span class="header-section-number">7</span> The TMLE Framework</a></li>
+<li class="book-part">Part 3: Advanced Topics</li>
+<li><a class="active" href="dynamic-and-optimal-individualized-treatment-regimes.html"><span class="header-section-number">8</span> Dynamic and Optimal Individualized Treatment Regimes</a></li>
+<li><a class="" href="shift.html"><span class="header-section-number">9</span> Stochastic Treatment Regimes</a></li>
+<li><a class="" href="causal-mediation-analysis.html"><span class="header-section-number">10</span> Causal Mediation Analysis</a></li>
+<li><a class="" href="references.html">References</a></li>
+</ul>
+
+        <div class="book-extra">
+          <p><a id="book-repo" href="https://github.com/tlverse/tlverse-handbook">View book source <i class="fab fa-github"></i></a></p>
+        </div>
+      </nav>
+</div>
+  </header><main class="col-sm-12 col-md-9 col-lg-7" id="content"><div id="dynamic-and-optimal-individualized-treatment-regimes" class="section level1" number="8">
+<h1>
+<span class="header-section-number">8</span> Dynamic and Optimal Individualized Treatment Regimes<a class="anchor" aria-label="anchor" href="#dynamic-and-optimal-individualized-treatment-regimes"><i class="fas fa-link"></i></a>
+</h1>
+<p><em>Ivana Malenica</em></p>
+<p>Based on the <a href="https://github.com/tlverse/tmle3mopttx"><code>tmle3mopttx</code> <code>R</code> package</a>
+by <em>Ivana Malenica, Jeremy Coyle, and Mark van der Laan</em>.</p>
+<div id="learning-objectives-2" class="section level2" number="8.1">
+<h2>
+<span class="header-section-number">8.1</span> Learning Objectives<a class="anchor" aria-label="anchor" href="#learning-objectives-2"><i class="fas fa-link"></i></a>
+</h2>
+<ol style="list-style-type: decimal">
+<li>Differentiate dynamic and optimal dynamic treatment interventions from static
+interventions.</li>
+<li>Explain the benefits, and challenges, associated with using optimal
+individualized treatment regimes in practice.</li>
+<li>Contrast the impact of implementing an optimal individualized treatment
+regime in the population with the impact of implementing static and dynamic
+treatment regimes in the population.</li>
+<li>Estimate causal effects under optimal individualized treatment regimes with
+the <code>tmle3mopttx</code> <code>R</code> package.</li>
+<li>Assess the mean under optimal individualized treatment with resource
+constraints.</li>
+<li>Implement optimal individualized treatment rules based on sub-optimal
+rules, or “simple” rules, and recognize the practical benefit of these rules.</li>
+<li>Construct “realistic” optimal individualized treatment regimes that respect
+real data and subject-matter knowledge limitations on interventions by
+only considering interventions that are supported by the data.</li>
+<li>Interpret the estimated optimal individualized treatment rule.</li>
+<li>Measure variable importance as defined in terms of the optimal individualized
+treatment interventions.</li>
+</ol>
+</div>
+<div id="introduction-to-optimal-individualized-interventions" class="section level2" number="8.2">
+<h2>
+<span class="header-section-number">8.2</span> Introduction to Optimal Individualized Interventions<a class="anchor" aria-label="anchor" href="#introduction-to-optimal-individualized-interventions"><i class="fas fa-link"></i></a>
+</h2>
+<p>Identifying which intervention will be effective for which patient based on
+lifestyle, genetic and environmental factors is a common goal in precision
+medicine. To put it in context, Abacavir and Tenofovir are commonly prescribed
+as part of the antiretroviral therapy to Human Immunodeficiency Virus (HIV)
+patients. However, not all individuals benefit from the two medications equally.
+In particular, patients with renal dysfunction might further deteriorate if
+prescribed Tenofovir, due to the high nephrotoxicity caused by the medication.
+While Tenofovir is still highly effective treatment option for HIV patients, in
+order to maximize the patient’s well-being, it would be beneficial to prescribe
+Tenofovir only to individuals with healthy kidney function. As an another example,
+consider a HIV trial where our goal is to improve retention in HIV care.
+In a randomized clinical trial, several interventions show efficacy- including
+appointment reminders through text messages, small cash incentives for on time
+clinic visits, and peer health workers. Ideally, we want to improve effectiveness
+by assigning each patient the intervention they are most likely to benefit from,
+as well as improve efficiency by not allocating resources to individuals that do not need
+them, or would not benefit from it.</p>
+<div class="figure" style="text-align: center">
+<span style="display:block;" id="fig:unnamed-chunk-1"></span>
+<img src="img/png/DynamicA_Illustration.png" alt="Dynamic Treatment Regime in a Clinical Setting" width="80%"><p class="caption">
+FIGURE 5.1: Dynamic Treatment Regime in a Clinical Setting
+</p>
+</div>
+<p>One opts to administer the intervention to individuals who will profit from it,
+instead of assigning treatment on a population level. But how do we know which
+intervention works for which patient? This aim motivates a different type of
+intervention, as opposed to the static exposures we described in previous chapters.
+In particular, in this chapter we learn about dynamic or “individualized”
+interventions that tailor the treatment decision based on the collected
+covariates. Formally, dynamic treatments represent interventions that at each
+treatment-decision stage are allowed to respond to the currently available
+treatment and covariate history. A dynamic treatment rule can be thought of as
+a rule where the input is the available set of collected covariates, and the
+output is an individualized treatment for each patient
+<span class="citation">(<a href="references.html#ref-bembom2007realistic" role="doc-biblioref">Bembom and van der Laan, 2007</a>; <a href="references.html#ref-moodie2013" role="doc-biblioref">Chakraborty and Moodie, 2013</a>; <a href="references.html#ref-robins1986" role="doc-biblioref">J Robins, 1986</a>)</span>.</p>
+<p>In the statistics community such a treatment strategy is termed an
+<strong>individualized treatment regime</strong> (ITR), also known as the optimal
+dynamic treatment rule, optimal treatment regime, optimal strategy,
+and optimal policy <span class="citation">(<a href="references.html#ref-murphy2003" role="doc-biblioref">Murphy, 2003</a>; <a href="references.html#ref-robins2004" role="doc-biblioref">Robins, 2004</a>)</span>. The (counterfactual)
+population mean outcome under an ITR is the value of the ITR <span class="citation">(<a href="references.html#ref-murphy2003" role="doc-biblioref">Murphy, 2003</a>; <a href="references.html#ref-robins2004" role="doc-biblioref">Robins, 2004</a>)</span>.
+Even more, suppose one wishes to maximize the population mean of an
+outcome, where for each individual we have access to some set of measured
+covariates. This means, for example, that we can learn for which individual
+characteristics assigning treatment increases the probability of a beneficial
+outcome. An ITR with the maximal value is referred to as an
+optimal ITR or the <strong>optimal individualized treatment</strong>. Consequently, the value
+of an optimal ITR is termed the optimal value, or the
+<strong>mean under the optimal individualized treatment</strong>.</p>
+<p>The problem of estimating the optimal individualized treatment has received much
+attention in the statistics literature over the years, especially with the
+advancement of precision medicine; see <span class="citation">Murphy (<a href="references.html#ref-murphy2003" role="doc-biblioref">2003</a>)</span>, <span class="citation">Robins (<a href="references.html#ref-robins2004" role="doc-biblioref">2004</a>)</span>, <span class="citation">Zhang <em>et al.</em> (<a href="references.html#ref-laber2012" role="doc-biblioref">2016</a>)</span>,
+<span class="citation">Zhao <em>et al.</em> (<a href="references.html#ref-kosorok2012" role="doc-biblioref">2012</a>)</span>, <span class="citation">Chakraborty and Moodie (<a href="references.html#ref-moodie2013" role="doc-biblioref">2013</a>)</span> and <span class="citation">Robins and Rotnitzky (<a href="references.html#ref-robins2014" role="doc-biblioref">2014</a>)</span> to name a few. However, much of the
+early work depends on parametric assumptions. As such, even in a randomized
+trial, the statistical inference for the optimal individualized treatment relies
+on assumptions that are generally believed to be false, and can lead to biased
+results.</p>
+<p>In this chapter, we consider estimation of the mean outcome under the optimal
+individualized treatment where the candidate rules are restricted to depend only
+on user-supplied subset of the baseline covariates. The estimation problem is
+addressed in a statistical model for the data distribution that is
+nonparametric, and at most places restrictions on the probability of a patient
+receiving treatment given covariates (as in a randomized trial). As such, we
+don’t need to make any assumptions about the relationship of the outcome with
+the treatment and covariates, or the relationship between the treatment and
+covariates. Further, we provide a Targeted Maximum Likelihood Estimator for the
+mean under the optimal individualized treatment that allows us to generate valid
+inference for our parameter, without having any parametric assumptions.</p>
+<p>In the following, we provide a brief overview of the methodology with a focus on
+building intuition for the target parameter and its importance — aided with simulations,
+data examples and software demonstrations. For more information on the technical aspects
+of the algorithm, further practical advice and overview, the interested reader is invited to
+additionally consult <span class="citation">van der Laan and Luedtke (<a href="references.html#ref-vanderLaanLuedtke15" role="doc-biblioref">2015</a>)</span>, <span class="citation">A Luedtke and van der Laan (<a href="references.html#ref-luedtke2016super" role="doc-biblioref">2016</a>)</span>, <span class="citation">Montoya, van der Laan, Luedtke, <em>et al.</em> (<a href="references.html#ref-montoya2021optimal" role="doc-biblioref">2023</a>)</span> and
+<span class="citation">Montoya, van der Laan, Skeem, <em>et al.</em> (<a href="references.html#ref-montoya2021performance" role="doc-biblioref">2023</a>)</span>.</p>
+<hr>
+</div>
+<div id="data-structure-and-notation" class="section level2" number="8.3">
+<h2>
+<span class="header-section-number">8.3</span> Data Structure and Notation<a class="anchor" aria-label="anchor" href="#data-structure-and-notation"><i class="fas fa-link"></i></a>
+</h2>
+<p>Suppose we observe <span class="math inline">\(n\)</span> independent and identically distributed observations of
+the form <span class="math inline">\(O=(W,A,Y) \sim P_0\)</span>. We denote <span class="math inline">\(A\)</span> as categorical treatment, and <span class="math inline">\(Y\)</span>
+as the final outcome. In particular, we define <span class="math inline">\(A \in \mathcal{A}\)</span> where
+<span class="math inline">\(\mathcal{A} \equiv \{a_1, \cdots, a_{n_A} \}\)</span> and <span class="math inline">\(n_A = |\mathcal{A}|\)</span>, with
+<span class="math inline">\(n_A\)</span> denoting the number of categories (possibly only two, for a binary setup).
+Note that we treat <span class="math inline">\(W\)</span> as vector-valued, representing all of our collected
+baseline covariates. Therefore, for a single random individual <span class="math inline">\(i\)</span>, we have that
+their observed data is <span class="math inline">\(O_i\)</span>: with corresponding baseline covariates <span class="math inline">\(W_i\)</span>,
+treatment <span class="math inline">\(A_i\)</span>, and final outcome <span class="math inline">\(Y_i\)</span>. Let <span class="math inline">\(O^n = \{O_i\}_{i=1}^n\)</span> denote
+<span class="math inline">\(n\)</span> observed samples. Then, we say that <span class="math inline">\(O^n \sim P_0\)</span>, or that all
+data was drawn from some true probability distribution <span class="math inline">\(P_0\)</span>. Let <span class="math inline">\(\mathcal{M}\)</span>
+denote a statistical model for the probability distribution of the data that is
+nonparametric, beyond possible knowledge of the treatment mechanism. In words, this
+means that we make no assumptions on the relationship between variables, but might
+be able to say something about the relationship of <span class="math inline">\(A\)</span> and <span class="math inline">\(W\)</span>, as is the case in
+a randomized trial. In general, the more we know, or are willing to assume about the
+experiment that produces the data, the smaller the model. The true data generating
+distribution <span class="math inline">\(P_0\)</span> is part of the statistical model <span class="math inline">\(\mathcal{M}\)</span>, and we write
+<span class="math inline">\(P_0 \in \mathcal{M}\)</span>. As in previous chapters, we denote <span class="math inline">\(P_n\)</span> as the empirical distribution
+which gives each observation weight <span class="math inline">\(1/n\)</span>.</p>
+<p>We use the structural equation model (SEM) in order to define
+the process that gives rise to the observed (endogenous) and not observed
+(exogenous) variables, as described by <span class="citation">Pearl (<a href="references.html#ref-pearl2009causality" role="doc-biblioref">2009</a>)</span>. In particular, we
+denote <span class="math inline">\(U=(U_W,U_A,U_Y)\)</span> as the exogenous random variables, drawn from <span class="math inline">\(U \sim P_U\)</span>.
+The endogenous variables, written as <span class="math inline">\(O=(W,A,Y)\)</span>, correspond to the observed data.
+We can define the relationships between variables with the following structural equations:
+<span class="math display" id="eq:npsem-mopttx">\[\begin{align}
+  W &amp;= f_W(U_W) \\ A &amp;= f_A(W, U_A) \\ Y &amp;= f_Y(A, W, U_Y),
+  \tag{8.1}
+\end{align}\]</span>
+where the collection <span class="math inline">\(f=(f_W,f_A,f_Y)\)</span> denotes unspecified functions, beyond possible
+knowledge of the treatment mechanism function, <span class="math inline">\(f_A\)</span>. Note that
+in the case of a randomized trial, we can write the above NPSEM as
+<span class="math display" id="eq:npsem-rt-mopttx">\[\begin{align}
+  W &amp;= f_W(U_W) \\ A &amp;= U_A \\ Y &amp;= f_Y(A, W, U_Y),
+  \tag{8.2}
+\end{align}\]</span>
+where <span class="math inline">\(U_A\)</span> has a known distribution and <span class="math inline">\(U_A\)</span> is independent of <span class="math inline">\(U_W\)</span>. We will discuss
+this more in later sections on identifiability.</p>
+<p>The likelihood of the data admits a factorization, implied by the time ordering
+of <span class="math inline">\(O\)</span>. We denote the true density of <span class="math inline">\(O\)</span> as <span class="math inline">\(p_0\)</span>, corresponding to the
+distribution <span class="math inline">\(P_0\)</span> and dominating measure <span class="math inline">\(\mu\)</span>.
+<span class="math display" id="eq:likelihood-factorization-mopttx">\[\begin{equation}
+  p_0(O) = p_{Y,0}(Y \mid A,W) p_{A,0}(A \mid W) p_{W,0}(W) =
+    q_{Y,0}(Y \mid A,W) g_{A,0}(A \mid W) q_{W,0}(W),
+  \tag{8.3}
+\end{equation}\]</span>
+where <span class="math inline">\(p_{Y,0}(Y|A,W)\)</span> is the conditional density of <span class="math inline">\(Y\)</span> given <span class="math inline">\((A, W)\)</span> with
+respect to some dominating measure <span class="math inline">\(\mu_Y\)</span>, <span class="math inline">\(p_{A,0}\)</span> is the conditional density
+of <span class="math inline">\(A\)</span> given <span class="math inline">\(W\)</span> with respect to a counting measure <span class="math inline">\(\mu_A\)</span>, and <span class="math inline">\(p_{W,0}\)</span> is
+the density of <span class="math inline">\(W\)</span> with respect to dominating measure <span class="math inline">\(\mu_W\)</span>. In order to
+match relevant Targeted Learning literature, we also
+write <span class="math inline">\(P_{Y,0}(Y \mid A, W) = Q_{Y,0}(Y \mid A,W)\)</span>, <span class="math inline">\(P_{A,0}(A \mid W) = g_0(A \mid W)\)</span>
+and <span class="math inline">\(P_{W,0}(W)=Q_{W,0}(W)\)</span> as the corresponding conditional
+distribution of <span class="math inline">\(Y\)</span> given <span class="math inline">\((A,W)\)</span>, treatment mechanism <span class="math inline">\(A\)</span> given <span class="math inline">\(W\)</span>, and
+distribution of baseline covariates. For notational simplicity, we additionally define
+<span class="math inline">\(\bar{Q}_{Y,0}(A,W) \equiv \E_0[Y \mid A,W]\)</span> as the conditional expectation of
+<span class="math inline">\(Y\)</span> given <span class="math inline">\((A,W)\)</span>.</p>
+<p>Lastly, we define <span class="math inline">\(V\)</span> as a subset of the baseline covariates the optimal
+individualized rule depends on, where <span class="math inline">\(V \in W\)</span>. Note that <span class="math inline">\(V\)</span> could be all of
+<span class="math inline">\(W\)</span>, or an empty set, depending on the subject matter knowledge. In particular,
+a researcher might want to consider known effect modifiers available at the time
+of treatment decision as possible <span class="math inline">\(V\)</span> covariates, or consider dynamic treatment
+rules based on measurments that can be easily obtained in a clinical setting.
+Defining <span class="math inline">\(V\)</span> as a more restrictive set of baseline covariates allows us to consider
+possibly sub-optimal rules that are easier to estimate, and thereby allows for
+statistical inference for the counterfactual mean outcome under the sub-optimal rule;
+we will elaborate on this in later sections.</p>
+</div>
+<div id="defining-the-causal-effect-of-an-optimal-individualized-intervention" class="section level2" number="8.4">
+<h2>
+<span class="header-section-number">8.4</span> Defining the Causal Effect of an Optimal Individualized Intervention<a class="anchor" aria-label="anchor" href="#defining-the-causal-effect-of-an-optimal-individualized-intervention"><i class="fas fa-link"></i></a>
+</h2>
+<p>Consider dynamic treatment rules, denoted as <span class="math inline">\(d\)</span>, in the set of all possible rules
+<span class="math inline">\(\mathcal{D}\)</span>. Then, in a point treatment setting, <span class="math inline">\(d\)</span> is a deterministic function
+that takes as input <span class="math inline">\(V\)</span> and outputs a treatment decision where
+<span class="math inline">\(V \rightarrow d(V) \in \{a_1, \cdots, a_{n_A} \}\)</span>. We will use dynamic treatment rules,
+and the corresponding treatment decision, to describe an intervention on the
+treatment mechanism and the corresponding outcome under a dynamic treatment rule.</p>
+<p>As mentioned in the previous section, causal effects are defined in terms of
+hypothetical interventions on the SEM <a href="dynamic-and-optimal-individualized-treatment-regimes.html#eq:npsem-mopttx">(8.1)</a>. For a given
+rule <span class="math inline">\(d\)</span>, our modified system then takes the following form:
+<span class="math display" id="eq:npsem-causal-mopttx">\[\begin{align}
+  W &amp;= f_W(U_W) \\ A &amp;= d(V) \\ Y_{d(V)} &amp;= f_Y(d(V), W, U_Y),
+  \tag{8.4}
+\end{align}\]</span>
+where the dynamic treatment regime may be viewed as an intervention in which <span class="math inline">\(A\)</span>
+is set equal to a value based on a hypothetical regime <span class="math inline">\(d(V)\)</span>. The couterfactual outcome
+<span class="math inline">\(Y_{d(V)}\)</span> denotes the outcome for a patient had their treatment been assigned using the
+dynamic rule <span class="math inline">\(d(V)\)</span>, possibly contrary to the fact. Similarly, the counterfactual
+outcomes had all patients been assigned treatment (<span class="math inline">\(A=1\)</span>), or given control (<span class="math inline">\(A=0\)</span>), are
+written as <span class="math inline">\(Y_1\)</span> and <span class="math inline">\(Y_0\)</span>. Finally, we denote the distribution of the counterfactual outcomes
+as <span class="math inline">\(P_{U,X}\)</span>, implied by the distribution of exogenous variables <span class="math inline">\(U\)</span> and structural
+equations <span class="math inline">\(f\)</span>. The set of all possible counterfactual distributions are encompased
+by the causal model <span class="math inline">\(\mathcal{M}^F\)</span>, where <span class="math inline">\(P_{U,X} \in \mathcal{M}^F\)</span>.</p>
+<p>The goal of any causal analysis motivated by such dynamic interventions is to
+estimate a parameter defined as the counterfactual mean of the outcome with
+respect to the modified intervention distribution. That is, subject’s outcome if,
+possibly contrary to the fact, the subject received treatment that would have been
+assigned by rule <span class="math inline">\(d(V)\)</span>. Equivalently, we ask the following causal question:
+“What is the expected outcome had every subject received treatment according to the
+(optimal) individualized treatment?” In order to estimate the optimal individualized
+treatment, we set the following optimization problem:</p>
+<p><span class="math display">\[d_{opt}(V) \equiv \text{argmax}_{d(V) \in \mathcal{D}}
+\E_{P_{U,X}}[Y_{d(V)}], \]</span>
+where the optimal individualized rule is the rule with the maximal value. We note that, in case
+the problem at hand requires minimizing the mean of an outcome, our optimal individualized
+rule will be the rule with the minimal value instead.</p>
+<p>With that in mind, we can consider different
+treatment rules, all in the set <span class="math inline">\(\mathcal{D}\)</span>:</p>
+<ol style="list-style-type: decimal">
+<li><p>The true rule, <span class="math inline">\(d_{0,\text{opt}}\)</span>, and the corresponding causal parameter
+<span class="math inline">\(\E_{U,X}[Y_{d_{0,\text{opt}}(V)}]\)</span> denoting the expected outcome under the
+true optimal treatment rule <span class="math inline">\(d_{0,\text{opt}}(V)\)</span>.</p></li>
+<li><p>The estimated rule, <span class="math inline">\(d_{n,\text{opt}}\)</span>, and the corresponding causal parameter
+<span class="math inline">\(\E_{U,X}[Y_{d_{n,\text{opt}}(V)}]\)</span> denoting the expected outcome under the
+estimated optimal treatment rule <span class="math inline">\(d_{n,\text{opt}}(V)\)</span>.</p></li>
+</ol>
+<p>In this chapter, we will focus on the value under the estimated optimal rule <span class="math inline">\(d_{n,\text{opt}}\)</span>,
+a <strong>data-adaptive parameter</strong>. Note that its true value depends on the sample! Finally,
+our causal target parameter of interest is the expected outcome under
+the estimated optimal individualized rule:</p>
+<p><span class="math display">\[\Psi_{d_{n, \text{opt}}(V)}(P_{U,X}) \coloneqq \E_{P_{U,X}}[Y_{d_{n,
+\text{opt}}(V)}].\]</span></p>
+<div id="identification-and-statistical-estimand" class="section level3" number="8.4.1">
+<h3>
+<span class="header-section-number">8.4.1</span> Identification and Statistical Estimand<a class="anchor" aria-label="anchor" href="#identification-and-statistical-estimand"><i class="fas fa-link"></i></a>
+</h3>
+<p>The optimal individualized rule, as well as the value of an optimal
+individualized rule, are causal parameters based on the unobserved
+counterfactuals. In order for the causal quantities to be estimated from the
+observed data, they need to be identified with statistical parameters. This step
+of the roadmap requires we make a few assumptions:</p>
+<ol style="list-style-type: decimal">
+<li>
+<em>Strong ignorability</em>: <span class="math inline">\(A \indep Y^{d_{n, \text{opt}}(v)} \mid W\)</span>, for all <span class="math inline">\(a \in \mathcal{A}\)</span>.</li>
+<li>
+<em>Positivity (or overlap)</em>: <span class="math inline">\(P_0(\min_{a \in \mathcal{A}} g_0(a \mid W) &gt; 0) = 1\)</span>
+</li>
+</ol>
+<p>Under the above assumptions, we can identify the causal target parameter
+with observed data using the G-computation formula. The value of an individualized
+rule can now be expressed as</p>
+<p><span class="math display">\[\E_0[Y_{d_{n, \text{opt}}(V)}] = \E_{0,W}[\bar{Q}_{Y,0}(A=d_{n, \text{opt}}(V),W)],\]</span></p>
+<p>which, under assumptions, is interpreted as the mean outcome if
+(possibly contrary to fact), treatment was assigned according to the optimal rule.
+Finally, the statistical counterpart to the causal parameter of interest is
+defined as</p>
+<p><span class="math display">\[\psi_0 = \E_{0,W}[\bar{Q}_{Y,0}(A=d_{n,\text{opt}}(V),W)].\]</span></p>
+<p>Inference for the optimal value has been shown to be difficult at exceptional
+laws, defined as probability distributions for which there is a positive
+probability on a set of <span class="math inline">\(W\)</span> values for which conditional expectation of <span class="math inline">\(Y\)</span>
+given <span class="math inline">\(A\)</span> and <span class="math inline">\(W\)</span> is constant in <span class="math inline">\(a\)</span> - so all treatments are equally
+benefitial. Inference is similarly difficult in finite samples if
+the treatment effect is very small in all strata, even though valid asymptotic
+estimators exist in this setting. With that in mind, we address the estimation
+problem under the assumption of non-exceptional laws in effect.</p>
+<p>Many methods for learning the optimal rule from data have been developed
+<span class="citation">(<a href="references.html#ref-moodie2013" role="doc-biblioref">Chakraborty and Moodie, 2013</a>; <a href="references.html#ref-murphy2003" role="doc-biblioref">Murphy, 2003</a>; <a href="references.html#ref-robins2004" role="doc-biblioref">Robins, 2004</a>; <a href="references.html#ref-laber2012" role="doc-biblioref">Zhang <em>et al.</em>, 2016</a>; <a href="references.html#ref-kosorok2012" role="doc-biblioref">Zhao <em>et al.</em>, 2012</a>)</span>. In this
+chapter, we focus on the methods discussed in <span class="citation">A Luedtke and van der Laan (<a href="references.html#ref-luedtke2016super" role="doc-biblioref">2016</a>)</span> and
+<span class="citation">van der Laan and Luedtke (<a href="references.html#ref-vanderLaanLuedtke15" role="doc-biblioref">2015</a>)</span>. Note however, that <code>tmle3mopttx</code> also supports the widely
+used Q-learning approach, where the optimal individualized rule is based on the
+initial estimate of <span class="math inline">\(\bar{Q}_{Y,0}(A,W)\)</span> <span class="citation">(<a href="references.html#ref-Sutton1998" role="doc-biblioref">Sutton <em>et al.</em>, 1998</a>)</span>.</p>
+<p>We follow the methodology outlined in <span class="citation">A Luedtke and van der Laan (<a href="references.html#ref-luedtke2016super" role="doc-biblioref">2016</a>)</span> and
+<span class="citation">van der Laan and Luedtke (<a href="references.html#ref-vanderLaanLuedtke15" role="doc-biblioref">2015</a>)</span>, where we learn the optimal ITR using Super Learner
+<span class="citation">(<a href="references.html#ref-vdl2007super" role="doc-biblioref">van der Laan <em>et al.</em>, 2007</a>)</span>, and estimate its value with cross-validated Targeted Minimum
+Loss-based Estimation (CV-TMLE) <span class="citation">(<a href="references.html#ref-cvtmle2010" role="doc-biblioref">Zheng and van der Laan, 2011</a>)</span>. In great generality, we first
+need to estimate the true individual treatment regime, <span class="math inline">\(d_0(V)\)</span>, which
+corresponds to dynamic treatment rule that takes a subset of covariates
+<span class="math inline">\(V\)</span> and assigns treatment to each individual based on their observed
+covariates <span class="math inline">\(v\)</span>. With the estimate of the true optimal ITR in hand, we can
+estimate its corresponding value.</p>
+</div>
+<div id="binary-treatment" class="section level3" number="8.4.2">
+<h3>
+<span class="header-section-number">8.4.2</span> Binary treatment<a class="anchor" aria-label="anchor" href="#binary-treatment"><i class="fas fa-link"></i></a>
+</h3>
+<p>How do we estimate the optimal individualized treatment regime? In the case of a
+binary treatment, a key quantity for optimal ITR is the <strong>blip function</strong>. One can
+show that any optimal ITR assigns treatment to individuals falling in strata in
+which the stratum specific average treatment effect, the blip, is
+positive and does not assign treatment to individuals for which this quantity is
+negative. Therefore for a binary treatment, under causal assumptions, we define
+the blip function as:
+<span class="math display">\[\bar{Q}_0(V) \equiv \E_0[Y_1-Y_0 \mid V] \equiv \E_0[\bar{Q}_{Y,0}(1,W) -
+\bar{Q}_{Y,0}(0,W) \mid V],\]</span>
+or the average treatment effect within a stratum of <span class="math inline">\(V\)</span>. The note that the
+optimal individualized rule can now be derived as <span class="math inline">\(d_{n,\text{opt}}(V) = \mathbb{I}(\bar{Q}_{n}(V) &gt; 0)\)</span>.</p>
+<p>The package <code>tmle3mopttx</code> relies on using the Super Learner to estimate the blip
+function. With that in mind, the loss function utilized for learning the optimal
+individualized rule corresponds to conditional mean type losses. It is however worth
+mentioning that <span class="citation">A Luedtke and van der Laan (<a href="references.html#ref-luedtke2016super" role="doc-biblioref">2016</a>)</span> present three different approaches for learning the optimal
+rule. Namely, they focus on:</p>
+<ol style="list-style-type: decimal">
+<li><p>Super Learner of the blip function using the squared error loss,</p></li>
+<li><p>Super Learner of <span class="math inline">\(d_0\)</span> using the weighted classification loss function,</p></li>
+<li><p>Super Learner of <span class="math inline">\(d_0\)</span> that uses a library of candidate estimators that are
+implied by estimators of the blip as well as estimators that directly go for
+<span class="math inline">\(d_0\)</span> through weighted classification.</p></li>
+</ol>
+<p>A benefit of relying on the blip function, as implemented in <code>tmle3mopttx</code>, is that
+one can look at the distribution of the predicted outcomes of the blip for a given
+sample. Having an estimate of the blip allows one to identify patients in the sample
+who benefit the most (or the least) from treatment. Additionally, blip-based approach
+allows for straight-forward extension to the categorical treatment, interpretable rules,
+and OIT under resource constrains, where only a percent of the population can receive
+treatment <span class="citation">(<a href="references.html#ref-luedtke2016resource" role="doc-biblioref">AR Luedtke and van der Laan, 2016</a>)</span>.</p>
+<p>Relying on the Targeted Maximum Likelihood (TML) estimator and the Super Learner
+estimate of the blip function, we follow the below steps in order to obtain
+value of the ITR:</p>
+<ol style="list-style-type: decimal">
+<li>Estimate <span class="math inline">\(\bar{Q}_{Y,0}(A,W)\)</span> and <span class="math inline">\(g_0(A \mid W)\)</span> using <code>sl3</code>. We denote such
+estimates as <span class="math inline">\(\bar{Q}_{Y,n}(A,W)\)</span> and <span class="math inline">\(g_n(A \mid W)\)</span>.</li>
+<li>Apply the doubly robust Augmented-Inverse Probability Weighted (A-IPW)
+transform to our outcome (double-robust pseudo-outcome), where we define:
+<span class="math display">\[D_{\bar{Q}_Y,g,a}(O) \equiv \frac{\mathbb{I}(A=a)}{g(A \mid W)} (Y -
+\bar{Q}_Y(A,W)) + \bar{Q}_Y(A=a,W).\]</span>
+</li>
+</ol>
+<p>Note that under the randomization and positivity assumptions we have that
+<span class="math inline">\(\E[D_{\bar{Q}_Y,g,a}(O) \mid V] = \E[Y_a \mid V]\)</span>. We emphasize the double
+robust nature of the A-IPW transform — consistency of <span class="math inline">\(\E[Y_a \mid V]\)</span> will depend
+on correct estimation of either <span class="math inline">\(\bar{Q}_{Y,0}(A,W)\)</span> or <span class="math inline">\(g_0(A \mid W)\)</span>. As
+such, in a randomized trial, we are guaranteed a consistent estimate of <span class="math inline">\(\E[Y_a \mid V]\)</span>
+even if we get <span class="math inline">\(\bar{Q}_{Y,0}(A,W)\)</span> wrong! An alternative to the double-robust pseudo-outcome
+just presented would be single stage Q-learning, where an estimate <span class="math inline">\(\bar{Q}_{Y,0}(A,W)\)</span>
+is used to predict at <span class="math inline">\(\bar{Q}_{Y,n}(A=1,W)\)</span> and <span class="math inline">\(\bar{Q}_{Y,n}(A=0,W)\)</span>. This provides
+an estimate of the blip function, <span class="math inline">\(\bar{Q}_{Y,n}(A=1,W) - \bar{Q}_{Y,n}(A=0,W)\)</span>, but
+relies on doing a good job on estimating <span class="math inline">\(\bar{Q}_{Y,0}(A,W)\)</span>.</p>
+<p>Using the double-robust pseudo-outcome, we can define the following contrast:
+<span class="math display">\[D_{\bar{Q}_Y,g}(O) = D_{\bar{Q}_Y, g, a=1}(O) - D_{\bar{Q}_Y, g, a=0}(O).\]</span></p>
+<p>We estimate the blip function, <span class="math inline">\(\bar{Q}_{0,a}(V)\)</span>, by regressing
+<span class="math inline">\(D_{\bar{Q}_Y,g}(O)\)</span> on <span class="math inline">\(V\)</span> using the specified <code>sl3</code> library of learners and an
+appropriate loss function. Finally, we are ready for the final steps.</p>
+<ol start="3" style="list-style-type: decimal">
+<li><p>Our estimated rule corresponds to <span class="math inline">\(\text{argmax}_{a \in \mathcal{A}} \bar{Q}_{0,a}(V)\)</span>.</p></li>
+<li><p>We obtain inference for the mean outcome under the estimated optimal rule
+using CV-TMLE.</p></li>
+</ol>
+</div>
+<div id="categorical-treatment" class="section level3" number="8.4.3">
+<h3>
+<span class="header-section-number">8.4.3</span> Categorical treatment<a class="anchor" aria-label="anchor" href="#categorical-treatment"><i class="fas fa-link"></i></a>
+</h3>
+<p>In line with the approach considered for binary treatment, we extend the blip
+function to allow for categorical treatment. We denote such blip function
+extensions as <em>pseudo-blips</em>, which are our new estimation targets in a
+categorical setting. We define pseudo-blips as vector-valued entities where the
+output for a given <span class="math inline">\(V\)</span> is a vector of length equal to the number of treatment
+categories, <span class="math inline">\(n_A\)</span>. As such, we define it as:
+<span class="math display">\[\bar{Q}_0^{pblip}(V) = \{\bar{Q}_{0,a}^{pblip}(V): a \in \mathcal{A} \}\]</span></p>
+<p>We implement three different pseudo-blips in <code>tmle3mopttx</code>.</p>
+<ol style="list-style-type: decimal">
+<li><p><em>Blip1</em> corresponds to choosing a reference category of treatment, and
+defining the blip for all other categories relative to the specified
+reference. Hence we have that:
+<span class="math display">\[\bar{Q}_{0,a}^{pblip-ref}(V) \equiv \E_0[Y_a-Y_0 \mid V]\]</span> where <span class="math inline">\(Y_0\)</span> is
+the specified reference category with <span class="math inline">\(A=0\)</span>. Note that, for the case of
+binary treatment, this strategy reduces to the approach described for the
+binary setup.</p></li>
+<li><p><em>Blip2</em> approach corresponds to defining the blip relative to the average of
+all categories. As such, we can define <span class="math inline">\(\bar{Q}_{0,a}^{pblip-avg}(V)\)</span> as:
+<span class="math display">\[\bar{Q}_{0,a}^{pblip-avg}(V) \equiv \E_0 [Y_a - \frac{1}{n_A} \sum_{a \in
+  \mathcal{A}} Y_a \mid V].\]</span>
+In the case where subject-matter knowledge regarding which reference category
+to use is not available, blip2 might be a viable option.</p></li>
+<li><p><em>Blip3</em> reflects an extension of Blip2, where the average is now a weighted
+average:
+<span class="math display">\[\bar{Q}_{0,a}^{pblip-wavg}(V) \equiv \E_0 [ Y_a - \frac{1}{n_A} \sum_{a \in
+  \mathcal{A}} Y_{a} P(A=a \mid V) \mid V ].\]</span></p></li>
+</ol>
+<p>Just like in the binary case, pseudo-blips are estimated by regressing contrasts
+composed using the A-IPW transform on <span class="math inline">\(V\)</span>.</p>
+</div>
+<div id="technical-note-inference-and-data-adaptive-parameter" class="section level3" number="8.4.4">
+<h3>
+<span class="header-section-number">8.4.4</span> Technical Note: Inference and data-adaptive parameter<a class="anchor" aria-label="anchor" href="#technical-note-inference-and-data-adaptive-parameter"><i class="fas fa-link"></i></a>
+</h3>
+<p>In a randomized trial, statistical inference relies on the second-order
+difference between the estimate of the optimal individualized treatment and the
+optimal individualized treatment itself to be asymptotically negligible. This is
+a reasonable condition if we consider rules that depend on a small number of
+covariates, or if we are willing to make smoothness assumptions. Alternatively,
+we can consider TMLEs and statistical inference for data-adaptive target
+parameters defined in terms of an estimate of the optimal individualized
+treatment. In particular, instead of trying to estimate the mean under the true
+optimal individualized treatment, we aim to estimate the mean under the
+estimated optimal individualized treatment. As such, we develop cross-validated
+TMLE approach that provides asymptotic inference under minimal conditions for
+the mean under the estimate of the optimal individualized treatment. In
+particular, considering the data adaptive parameter allows us to avoid
+consistency and rate condition for the fitted optimal rule, as required for
+asymptotic linearity of the TMLE of the mean under the actual, true optimal
+rule. Practically, the estimated (data-adaptive) rule should be preferred, as
+this possibly sub-optimal rule is the one implemented in the population.</p>
+</div>
+<div id="technical-note-why-cv-tmle" class="section level3" number="8.4.5">
+<h3>
+<span class="header-section-number">8.4.5</span> Technical Note: Why CV-TMLE?<a class="anchor" aria-label="anchor" href="#technical-note-why-cv-tmle"><i class="fas fa-link"></i></a>
+</h3>
+<p>As discussed in <span class="citation">van der Laan and Luedtke (<a href="references.html#ref-vanderLaanLuedtke15" role="doc-biblioref">2015</a>)</span>, CV-TMLE is necessary as the
+non-cross-validated TMLE is biased upward for the mean outcome under the rule,
+and therefore overly optimistic. More generally however, using CV-TMLE allows us
+more freedom in estimation and therefore greater data adaptivity, without
+sacrificing inference.</p>
+</div>
+</div>
+<div id="interpreting-the-causal-effect-of-an-optimal-individualized-intervention" class="section level2" number="8.5">
+<h2>
+<span class="header-section-number">8.5</span> Interpreting the Causal Effect of an Optimal Individualized Intervention<a class="anchor" aria-label="anchor" href="#interpreting-the-causal-effect-of-an-optimal-individualized-intervention"><i class="fas fa-link"></i></a>
+</h2>
+<p>In summary, the mean outcome under the optimal individualized treatment is a
+counterfactual quantity of interest representing what the mean outcome would
+have been if everybody, contrary to the fact, received treatment that optimized
+their outcome. The optimal individualized treatment regime is a rule that
+optimizes the mean outcome under the dynamic treatment, where the candidate
+rules are restricted to only respond to a user-supplied subset of the baseline
+covariates. In essence, our target parameter answers the key
+aim of precision medicine: allocating the available treatment by tailoring it to
+the individual characteristics of the patient, with the goal of optimizing the
+final outcome.</p>
+</div>
+<div id="oit-eval-bin" class="section level2" number="8.6">
+<h2>
+<span class="header-section-number">8.6</span> Evaluating the Causal Effect of an OIT with Binary Treatment<a class="anchor" aria-label="anchor" href="#oit-eval-bin"><i class="fas fa-link"></i></a>
+</h2>
+<p>Finally, we demonstrate how to evaluate the mean outcome under the optimal
+individualized treatment using <code>tmle3mopptx</code>. To start, let’s load the packages
+we’ll use and set a seed:</p>
+<div class="sourceCode" id="cb127"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com">data.table</a></span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://tlverse.org/sl3">sl3</a></span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://tlverse.org/tmle3">tmle3</a></span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://tlverse.org/tmle3mopttx">tmle3mopttx</a></span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://devtools.r-lib.org/">devtools</a></span><span class="op">)</span>
+
+<span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">111</span><span class="op">)</span></code></pre></div>
+<div id="simulated-data" class="section level3" number="8.6.1">
+<h3>
+<span class="header-section-number">8.6.1</span> Simulated Data<a class="anchor" aria-label="anchor" href="#simulated-data"><i class="fas fa-link"></i></a>
+</h3>
+<p>First, we load the simulated data. We will start with the more general setup
+where the treatment is a binary variable; later in the chapter we will consider
+another data-generating distribution where <span class="math inline">\(A\)</span> is categorical. In this example,
+our data generating distribution is of the following form:
+<span class="math display">\[\begin{align*}
+  W &amp;\sim \mathcal{N}(\bf{0},I_{3 \times 3})\\
+  \P(A=1 \mid W) &amp;= \frac{1}{1+\exp^{(-0.8*W_1)}}\\
+  \P(Y=1 \mid A,W) &amp;= 0.5\text{logit}^{-1}[-5I(A=1)(W_1-0.5)+5I(A=0)(W_1-0.5)] +
+     0.5\text{logit}^{-1}(W_2W_3)
+\end{align*}\]</span></p>
+<div class="sourceCode" id="cb128"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span><span class="op">(</span><span class="st">"data_bin"</span><span class="op">)</span></code></pre></div>
+<p>The above composes our observed data structure <span class="math inline">\(O = (W, A, Y)\)</span>. Note that the
+truth is <span class="math inline">\(\psi=0.578\)</span> for this data generating distribution.</p>
+<p>To formally express this fact using the <code>tlverse</code> grammar introduced by the
+<code>tmle3</code> package, we create a single data object and specify the functional
+relationships between the nodes in the <em>directed acyclic graph</em> (DAG) via
+<em>structural equation models</em> (SEMs), reflected in the node list
+that we set up:</p>
+<div class="sourceCode" id="cb129"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># organize data and nodes for tmle3</span>
+<span class="va">data</span> <span class="op">&lt;-</span> <span class="va">data_bin</span>
+<span class="va">node_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span>
+  W <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"W1"</span>, <span class="st">"W2"</span>, <span class="st">"W3"</span><span class="op">)</span>,
+  A <span class="op">=</span> <span class="st">"A"</span>,
+  Y <span class="op">=</span> <span class="st">"Y"</span>
+<span class="op">)</span></code></pre></div>
+<p>We now have an observed data structure (<code>data</code>) and a specification of the role
+that each variable in the dataset plays as the nodes in a DAG.</p>
+</div>
+<div id="constructing-optimal-stacked-regressions-with-sl3" class="section level3" number="8.6.2">
+<h3>
+<span class="header-section-number">8.6.2</span> Constructing Optimal Stacked Regressions with <code>sl3</code><a class="anchor" aria-label="anchor" href="#constructing-optimal-stacked-regressions-with-sl3"><i class="fas fa-link"></i></a>
+</h3>
+<p>To easily incorporate ensemble machine learning into the estimation procedure,
+we rely on the facilities provided in the <a href="https://tlverse.org/sl3"><code>sl3</code> R
+package</a>. Using the framework provided by the <a href="https://tlverse.org/sl3"><code>sl3</code>
+package</a>, the nuisance parameters of the TML estimator
+may be fit with ensemble learning, using the cross-validation framework of the
+Super Learner algorithm of <span class="citation">van der Laan <em>et al.</em> (<a href="references.html#ref-vdl2007super" role="doc-biblioref">2007</a>)</span>.</p>
+<div class="sourceCode" id="cb130"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Define sl3 library and metalearners:</span>
+<span class="va">lrn_xgboost_50</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_xgboost.html">Lrnr_xgboost</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>nrounds <span class="op">=</span> <span class="fl">50</span><span class="op">)</span>
+<span class="va">lrn_xgboost_100</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_xgboost.html">Lrnr_xgboost</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>nrounds <span class="op">=</span> <span class="fl">100</span><span class="op">)</span>
+<span class="va">lrn_xgboost_500</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_xgboost.html">Lrnr_xgboost</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>nrounds <span class="op">=</span> <span class="fl">500</span><span class="op">)</span>
+
+<span class="va">lrn_mean</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_mean.html">Lrnr_mean</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span>
+<span class="va">lrn_glm</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_glm_fast.html">Lrnr_glm_fast</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span>
+<span class="va">lrn_lasso</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_glmnet.html">Lrnr_glmnet</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span>
+
+<span class="co">## Define the Q learner:</span>
+<span class="va">Q_learner</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_sl.html">Lrnr_sl</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>
+  learners <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="va">lrn_lasso</span>, <span class="va">lrn_mean</span>, <span class="va">lrn_glm</span><span class="op">)</span>,
+  metalearner <span class="op">=</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_nnls.html">Lrnr_nnls</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span>
+<span class="op">)</span>
+
+<span class="co">## Define the g learner:</span>
+<span class="va">g_learner</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_sl.html">Lrnr_sl</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>
+  learners <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="va">lrn_lasso</span>, <span class="va">lrn_glm</span><span class="op">)</span>,
+  metalearner <span class="op">=</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_nnls.html">Lrnr_nnls</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span>
+<span class="op">)</span>
+
+<span class="co">## Define the B learner:</span>
+<span class="va">b_learner</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_sl.html">Lrnr_sl</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>
+  learners <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="va">lrn_lasso</span>,<span class="va">lrn_mean</span>, <span class="va">lrn_glm</span><span class="op">)</span>,
+  metalearner <span class="op">=</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_nnls.html">Lrnr_nnls</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span>
+<span class="op">)</span></code></pre></div>
+<p>As seen above, we generate three different ensemble learners that must be fit,
+corresponding to the learners for the outcome regression (Q), propensity score
+(g), and the blip function (B). We make the above explicit with respect to
+standard notation by bundling the ensemble learners into a list object below:</p>
+<div class="sourceCode" id="cb131"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># specify outcome and treatment regressions and create learner list</span>
+<span class="va">learner_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Q_learner</span>, A <span class="op">=</span> <span class="va">g_learner</span>, B <span class="op">=</span> <span class="va">b_learner</span><span class="op">)</span></code></pre></div>
+<p>The <code>learner_list</code> object above specifies the role that each of the ensemble
+learners we’ve generated is to play in computing initial estimators. Recall that
+we need initial estimators of relevant parts of the likelihood in order to
+build a TMLE for the parameter of interest. In particular, <code>learner_list</code>
+makes explicit the fact that our <code>Y</code> is used in fitting the outcome regression,
+while <code>A</code> is used in fitting the treatment mechanism regression, and finally <code>B</code>
+is used in fitting the blip function.</p>
+</div>
+<div id="targeted-estimation-of-the-mean-under-the-optimal-individualized-interventions-effects" class="section level3" number="8.6.3">
+<h3>
+<span class="header-section-number">8.6.3</span> Targeted Estimation of the Mean under the Optimal Individualized Interventions Effects<a class="anchor" aria-label="anchor" href="#targeted-estimation-of-the-mean-under-the-optimal-individualized-interventions-effects"><i class="fas fa-link"></i></a>
+</h3>
+<p>To start, we will initialize a specification for the TMLE of our parameter of
+interest simply by calling <code>tmle3_mopttx_blip_revere</code>. We specify the argument
+<code>V = c("W1", "W2", "W3")</code> when initializing the <code>tmle3_Spec</code> object in order to
+communicate that we’re interested in learning a rule dependent on <code>V</code>
+covariates. Note that we don’t have to specify <code>V</code> — this will result in a rule
+that is not based on any collected covariates; we will see an example like this
+shortly. We also need to specify the type
+of (pseudo) blip we will use in this estimation problem, the list of learners used
+to estimate the blip function, whether we want to maximize or minimize the final
+outcome, and few other more advanced features including searching for a less
+complex rule, realistic interventions and possible resource constraints.</p>
+<div class="sourceCode" id="cb132"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># initialize a tmle specification</span>
+<span class="va">tmle_spec</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tmle3mopttx/man/tmle3_mopttx_blip_revere.html">tmle3_mopttx_blip_revere</a></span><span class="op">(</span>
+  V <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"W1"</span>, <span class="st">"W2"</span>, <span class="st">"W3"</span><span class="op">)</span>, type <span class="op">=</span> <span class="st">"blip1"</span>,
+  learners <span class="op">=</span> <span class="va">learner_list</span>,
+  maximize <span class="op">=</span> <span class="cn">TRUE</span>, complex <span class="op">=</span> <span class="cn">TRUE</span>,
+  realistic <span class="op">=</span> <span class="cn">FALSE</span>, resource <span class="op">=</span> <span class="fl">1</span>
+<span class="op">)</span></code></pre></div>
+<p>As seen above, the <code>tmle3_mopttx_blip_revere</code> specification object
+(like all <code>tmle3_Spec</code> objects) does <em>not</em> store the data for our
+specific analysis of interest. Later,
+we’ll see that passing a data object directly to the <code>tmle3</code> wrapper function,
+alongside the instantiated <code>tmle_spec</code>, will serve to construct a <code>tmle3_Task</code>
+object internally.</p>
+<p>We elaborate more on the initialization specifications. In initializing the
+specification for the TMLE of our parameter of interest, we have specified the
+set of covariates the rule depends on (<code>V</code>), the type of (pseudo) blip to use
+(<code>type</code>), and the learners used for estimating the relevant parts of the
+likelihood and the blip function. In addition, we need to specify whether we
+want to maximize the mean outcome under the rule (<code>maximize</code>), and whether we
+want to estimate the rule under all the covariates <span class="math inline">\(V\)</span> provided by the user
+(<code>complex</code>). If <code>FALSE</code>, <code>tmle3mopttx</code> will instead consider all the possible
+rules under a smaller set of covariates including the static rules, and optimize
+the mean outcome over all the subsets of <span class="math inline">\(V\)</span>. As such, while the user might have
+provided a full set of collected covariates as input for <span class="math inline">\(V\)</span>, it is possible
+that the true rule only depends on a subset of the set provided by the user. In
+that case, our returned mean under the optimal individualized rule will be based
+on the smaller subset. In addition, we provide an option to search for realistic
+optimal individualized interventions via the <code>realistic</code> specification. If
+<code>TRUE</code>, only treatments supported by the data will be considered, therefore
+alleviating concerns regarding practical positivity issues. Finally, we can incorporate
+source constrains by setting <code>resource</code> argument to less than 1. We explore all the
+important extensions of <code>tmle3mopttx</code> in later sections.</p>
+<div class="sourceCode" id="cb133"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb133-1"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb133-1" aria-hidden="true" tabindex="-1"></a><span class="co"># fit the TML estimator</span></span>
+<span id="cb133-2"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb133-2" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">tmle3</span>(tmle_spec, data, node_list, learner_list)</span>
+<span id="cb133-3"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb133-3" aria-hidden="true" tabindex="-1"></a>fit</span>
+<span id="cb133-4"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb133-4" aria-hidden="true" tabindex="-1"></a>A tmle3_Fit that took <span class="dv">1</span> <span class="fu">step</span>(s)</span>
+<span id="cb133-5"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb133-5" aria-hidden="true" tabindex="-1"></a>   type         param init_est tmle_est      se  lower  upper psi_transformed</span>
+<span id="cb133-6"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb133-6" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>  TSM E[Y_{A<span class="ot">=</span><span class="cn">NULL</span>}]   <span class="fl">0.3504</span>   <span class="fl">0.5508</span> <span class="fl">0.02622</span> <span class="fl">0.4994</span> <span class="fl">0.6022</span>          <span class="fl">0.5508</span></span>
+<span id="cb133-7"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb133-7" aria-hidden="true" tabindex="-1"></a>   lower_transformed upper_transformed</span>
+<span id="cb133-8"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb133-8" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>            <span class="fl">0.4994</span>            <span class="fl">0.6022</span></span></code></pre></div>
+<p>By studying the output generated, we can see that the confidence interval covers the
+true parameter, as expected.</p>
+<div id="resource-constraint" class="section level4" number="8.6.3.1">
+<h4>
+<span class="header-section-number">8.6.3.1</span> Resource constraint<a class="anchor" aria-label="anchor" href="#resource-constraint"><i class="fas fa-link"></i></a>
+</h4>
+<p>We can restrict the number of individuals that get the treatment by only
+treating <span class="math inline">\(k\)</span> percent of samples. With that, only patients with the biggest benefit (according
+to the estimated blip) receive treatment. In order to impose a
+resource constraint, we only have to specify the percent of individuals that can
+get treatment. For example, if <code>resource=1</code>, all
+individuals with blip higher than zero will get treatment; if <code>resource=0</code>,
+noone will be treated.</p>
+<div class="sourceCode" id="cb134"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># initialize a tmle specification</span>
+<span class="va">tmle_spec_resource</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tmle3mopttx/man/tmle3_mopttx_blip_revere.html">tmle3_mopttx_blip_revere</a></span><span class="op">(</span>
+  V <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"W1"</span>, <span class="st">"W2"</span>, <span class="st">"W3"</span><span class="op">)</span>, type <span class="op">=</span> <span class="st">"blip1"</span>,
+  learners <span class="op">=</span> <span class="va">learner_list</span>,
+  maximize <span class="op">=</span> <span class="cn">TRUE</span>, complex <span class="op">=</span> <span class="cn">TRUE</span>,
+  realistic <span class="op">=</span> <span class="cn">FALSE</span>, resource <span class="op">=</span> <span class="fl">0.90</span>
+<span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb135"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb135-1"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb135-1" aria-hidden="true" tabindex="-1"></a><span class="co"># fit the TML estimator</span></span>
+<span id="cb135-2"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb135-2" aria-hidden="true" tabindex="-1"></a>fit_resource <span class="ot">&lt;-</span> <span class="fu">tmle3</span>(tmle_spec_resource, data, node_list, learner_list)</span>
+<span id="cb135-3"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb135-3" aria-hidden="true" tabindex="-1"></a>fit_resource</span>
+<span id="cb135-4"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb135-4" aria-hidden="true" tabindex="-1"></a>A tmle3_Fit that took <span class="dv">1</span> <span class="fu">step</span>(s)</span>
+<span id="cb135-5"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb135-5" aria-hidden="true" tabindex="-1"></a>   type         param init_est tmle_est      se  lower  upper psi_transformed</span>
+<span id="cb135-6"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb135-6" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>  TSM E[Y_{A<span class="ot">=</span><span class="cn">NULL</span>}]   <span class="fl">0.3566</span>   <span class="fl">0.5579</span> <span class="fl">0.02577</span> <span class="fl">0.5074</span> <span class="fl">0.6084</span>          <span class="fl">0.5579</span></span>
+<span id="cb135-7"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb135-7" aria-hidden="true" tabindex="-1"></a>   lower_transformed upper_transformed</span>
+<span id="cb135-8"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb135-8" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>            <span class="fl">0.5074</span>            <span class="fl">0.6084</span></span></code></pre></div>
+<p>We can compare the number of individuals that got treatment with and without the
+resource constraint:</p>
+<div class="sourceCode" id="cb136"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb136-1"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb136-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Number of individuals getting treatment (no resource constraint):</span></span>
+<span id="cb136-2"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb136-2" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(tmle_spec<span class="sc">$</span>return_rule)</span>
+<span id="cb136-3"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb136-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb136-4"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb136-4" aria-hidden="true" tabindex="-1"></a>  <span class="dv">0</span>   <span class="dv">1</span> </span>
+<span id="cb136-5"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb136-5" aria-hidden="true" tabindex="-1"></a><span class="dv">275</span> <span class="dv">725</span> </span>
+<span id="cb136-6"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb136-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb136-7"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb136-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Number of individuals getting treatment (resource constraint):</span></span>
+<span id="cb136-8"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb136-8" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(tmle_spec_resource<span class="sc">$</span>return_rule)</span>
+<span id="cb136-9"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb136-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb136-10"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb136-10" aria-hidden="true" tabindex="-1"></a>  <span class="dv">0</span>   <span class="dv">1</span> </span>
+<span id="cb136-11"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb136-11" aria-hidden="true" tabindex="-1"></a><span class="dv">274</span> <span class="dv">726</span> </span></code></pre></div>
+</div>
+<div id="empty-v" class="section level4" number="8.6.3.2">
+<h4>
+<span class="header-section-number">8.6.3.2</span> Empty V<a class="anchor" aria-label="anchor" href="#empty-v"><i class="fas fa-link"></i></a>
+</h4>
+<p>Below we the show an example where <span class="math inline">\(V\)</span> is not specified, under the
+resource constraint.</p>
+<div class="sourceCode" id="cb137"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># initialize a tmle specification</span>
+<span class="va">tmle_spec_V_empty</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tmle3mopttx/man/tmle3_mopttx_blip_revere.html">tmle3_mopttx_blip_revere</a></span><span class="op">(</span>
+  type <span class="op">=</span> <span class="st">"blip1"</span>,
+  learners <span class="op">=</span> <span class="va">learner_list</span>,
+  maximize <span class="op">=</span> <span class="cn">TRUE</span>, complex <span class="op">=</span> <span class="cn">TRUE</span>,
+  realistic <span class="op">=</span> <span class="cn">FALSE</span>, resource <span class="op">=</span> <span class="fl">0.90</span>
+<span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb138"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb138-1"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb138-1" aria-hidden="true" tabindex="-1"></a><span class="co"># fit the TML estimator</span></span>
+<span id="cb138-2"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb138-2" aria-hidden="true" tabindex="-1"></a>fit_V_empty <span class="ot">&lt;-</span> <span class="fu">tmle3</span>(tmle_spec_V_empty, data, node_list, learner_list)</span>
+<span id="cb138-3"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb138-3" aria-hidden="true" tabindex="-1"></a>fit_V_empty</span>
+<span id="cb138-4"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb138-4" aria-hidden="true" tabindex="-1"></a>A tmle3_Fit that took <span class="dv">1</span> <span class="fu">step</span>(s)</span>
+<span id="cb138-5"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb138-5" aria-hidden="true" tabindex="-1"></a>   type         param init_est tmle_est      se  lower  upper psi_transformed</span>
+<span id="cb138-6"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb138-6" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>  TSM E[Y_{A<span class="ot">=</span><span class="cn">NULL</span>}]   <span class="fl">0.3259</span>   <span class="fl">0.5321</span> <span class="fl">0.01034</span> <span class="fl">0.5118</span> <span class="fl">0.5523</span>          <span class="fl">0.5321</span></span>
+<span id="cb138-7"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb138-7" aria-hidden="true" tabindex="-1"></a>   lower_transformed upper_transformed</span>
+<span id="cb138-8"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb138-8" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>            <span class="fl">0.5118</span>            <span class="fl">0.5523</span></span></code></pre></div>
+</div>
+</div>
+</div>
+<div id="oit-eval-cat" class="section level2" number="8.7">
+<h2>
+<span class="header-section-number">8.7</span> Evaluating the Causal Effect of an optimal ITR with Categorical Treatment<a class="anchor" aria-label="anchor" href="#oit-eval-cat"><i class="fas fa-link"></i></a>
+</h2>
+<p>In this section, we consider how to evaluate the mean outcome under the optimal
+individualized treatment when <span class="math inline">\(A\)</span> has more than two categories. While the
+procedure is analogous to the previously described binary treatment, we now need
+to pay attention to the type of blip we define in the estimation stage, as well
+as how we construct our learners.</p>
+<div id="simulated-data-1" class="section level3" number="8.7.1">
+<h3>
+<span class="header-section-number">8.7.1</span> Simulated Data<a class="anchor" aria-label="anchor" href="#simulated-data-1"><i class="fas fa-link"></i></a>
+</h3>
+<p>First, we load the simulated data. Our data generating distribution is
+of the following form:
+<span class="math display">\[\begin{align*}
+  W &amp;\sim \mathcal{N}(\bf{0},I_{4 \times 4})\\
+  \P(A=a \mid W) &amp;= \frac{1}{1+\exp^{(-0.8*W_1)}}\\
+  \P(Y=1 \mid A,W) = 0.5\text{logit}^{-1}[15I(A=1)(W_1-0.5) - \\
+    3I(A=2)(2W_1+0.5) + \\
+    3I(A=3)(3W_1-0.5)] +\text{logit}^{-1}(W_2W_1) \\
+\end{align*}\]</span></p>
+<p>We can just load the data available as part of the package as follows:</p>
+<div class="sourceCode" id="cb139"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span><span class="op">(</span><span class="st">"data_cat_realistic"</span><span class="op">)</span></code></pre></div>
+<p>The above composes our observed data structure <span class="math inline">\(O = (W, A, Y)\)</span>. Note that the
+truth is now <span class="math inline">\(\psi_0=0.658\)</span>, which is the quantity we aim to estimate.</p>
+<div class="sourceCode" id="cb140"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># organize data and nodes for tmle3</span>
+<span class="va">data</span> <span class="op">&lt;-</span> <span class="va">data_cat_realistic</span>
+<span class="va">node_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span>
+  W <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"W1"</span>, <span class="st">"W2"</span>, <span class="st">"W3"</span>, <span class="st">"W4"</span><span class="op">)</span>,
+  A <span class="op">=</span> <span class="st">"A"</span>,
+  Y <span class="op">=</span> <span class="st">"Y"</span>
+<span class="op">)</span></code></pre></div>
+<p>We can see the number of observed categories of treatment below:</p>
+<div class="sourceCode" id="cb141"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb141-1"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb141-1" aria-hidden="true" tabindex="-1"></a><span class="co"># organize data and nodes for tmle3</span></span>
+<span id="cb141-2"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb141-2" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(data<span class="sc">$</span>A)</span>
+<span id="cb141-3"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb141-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb141-4"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb141-4" aria-hidden="true" tabindex="-1"></a>  <span class="dv">1</span>   <span class="dv">2</span>   <span class="dv">3</span> </span>
+<span id="cb141-5"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb141-5" aria-hidden="true" tabindex="-1"></a> <span class="dv">24</span> <span class="dv">528</span> <span class="dv">448</span> </span></code></pre></div>
+</div>
+<div id="constructing-optimal-stacked-regressions-with-sl3-1" class="section level3" number="8.7.2">
+<h3>
+<span class="header-section-number">8.7.2</span> Constructing Optimal Stacked Regressions with <code>sl3</code><a class="anchor" aria-label="anchor" href="#constructing-optimal-stacked-regressions-with-sl3-1"><i class="fas fa-link"></i></a>
+</h3>
+<p><strong>QUESTION:</strong> With categorical treatment, what is the dimension of the blip now?
+What is the dimension for the current example? How would we go about estimating it?</p>
+<p>We will now create new ensemble learners using the
+<code>sl3</code> learners initialized previously:</p>
+<div class="sourceCode" id="cb142"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Initialize few of the learners:</span>
+<span class="va">lrn_xgboost_50</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_xgboost.html">Lrnr_xgboost</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>nrounds <span class="op">=</span> <span class="fl">50</span><span class="op">)</span>
+<span class="va">lrn_xgboost_100</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_xgboost.html">Lrnr_xgboost</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>nrounds <span class="op">=</span> <span class="fl">100</span><span class="op">)</span>
+<span class="va">lrn_xgboost_500</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_xgboost.html">Lrnr_xgboost</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>nrounds <span class="op">=</span> <span class="fl">500</span><span class="op">)</span>
+<span class="va">lrn_mean</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_mean.html">Lrnr_mean</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span>
+<span class="va">lrn_glm</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_glm_fast.html">Lrnr_glm_fast</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span>
+
+<span class="co">## Define the Q learner, which is just a regular learner:</span>
+<span class="va">Q_learner</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_sl.html">Lrnr_sl</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>
+  learners <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="va">lrn_xgboost_100</span>, <span class="va">lrn_mean</span>, <span class="va">lrn_glm</span><span class="op">)</span>,
+  metalearner <span class="op">=</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_nnls.html">Lrnr_nnls</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span>
+<span class="op">)</span>
+
+<span class="co"># Define the g learner, which is a multinomial learner:</span>
+<span class="co"># specify the appropriate loss of the multinomial learner:</span>
+<span class="va">mn_metalearner</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tlverse.org/sl3/reference/Lrnr_base.html">make_learner</a></span><span class="op">(</span><span class="va">Lrnr_solnp</span>,
+  eval_function <span class="op">=</span> <span class="va">loss_loglik_multinomial</span>,
+  learner_function <span class="op">=</span> <span class="va">metalearner_linear_multinomial</span>
+<span class="op">)</span>
+<span class="va">g_learner</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tlverse.org/sl3/reference/Lrnr_base.html">make_learner</a></span><span class="op">(</span><span class="va">Lrnr_sl</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="va">lrn_xgboost_100</span>, <span class="va">lrn_xgboost_500</span>, <span class="va">lrn_mean</span><span class="op">)</span>, <span class="va">mn_metalearner</span><span class="op">)</span>
+
+<span class="co"># Define the Blip learner, which is a multivariate learner:</span>
+<span class="va">learners</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="va">lrn_xgboost_50</span>, <span class="va">lrn_xgboost_100</span>, <span class="va">lrn_xgboost_500</span>, <span class="va">lrn_mean</span>, <span class="va">lrn_glm</span><span class="op">)</span>
+<span class="va">b_learner</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tmle3mopttx/man/create_mv_learners.html">create_mv_learners</a></span><span class="op">(</span>learners <span class="op">=</span> <span class="va">learners</span><span class="op">)</span></code></pre></div>
+<p>As seen above, we generate three different ensemble learners that must be fit,
+corresponding to the learners for the outcome regression, propensity score, and
+the blip function. Note that we need to estimate <span class="math inline">\(g_0(A \mid W)\)</span> for a
+categorical <span class="math inline">\(A\)</span> — therefore, we use the multinomial Super Learner option
+available within the <code>sl3</code> package with learners that can address multi-class
+classification problems. In order to see which learners can be used to estimate
+<span class="math inline">\(g_0(A \mid W)\)</span> in <code>sl3</code>, we run the following:</p>
+<div class="sourceCode" id="cb143"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb143-1"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb143-1" aria-hidden="true" tabindex="-1"></a><span class="co"># See which learners support multi-class classification:</span></span>
+<span id="cb143-2"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb143-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sl3_list_learners</span>(<span class="fu">c</span>(<span class="st">"categorical"</span>))</span>
+<span id="cb143-3"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb143-3" aria-hidden="true" tabindex="-1"></a> [<span class="dv">1</span>] <span class="st">"Lrnr_bound"</span>                <span class="st">"Lrnr_caret"</span>               </span>
+<span id="cb143-4"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb143-4" aria-hidden="true" tabindex="-1"></a> [<span class="dv">3</span>] <span class="st">"Lrnr_cv_selector"</span>          <span class="st">"Lrnr_ga"</span>                  </span>
+<span id="cb143-5"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb143-5" aria-hidden="true" tabindex="-1"></a> [<span class="dv">5</span>] <span class="st">"Lrnr_glmnet"</span>               <span class="st">"Lrnr_grf"</span>                 </span>
+<span id="cb143-6"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb143-6" aria-hidden="true" tabindex="-1"></a> [<span class="dv">7</span>] <span class="st">"Lrnr_gru_keras"</span>            <span class="st">"Lrnr_h2o_glm"</span>             </span>
+<span id="cb143-7"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb143-7" aria-hidden="true" tabindex="-1"></a> [<span class="dv">9</span>] <span class="st">"Lrnr_h2o_grid"</span>             <span class="st">"Lrnr_independent_binomial"</span></span>
+<span id="cb143-8"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb143-8" aria-hidden="true" tabindex="-1"></a>[<span class="dv">11</span>] <span class="st">"Lrnr_lightgbm"</span>             <span class="st">"Lrnr_lstm_keras"</span>          </span>
+<span id="cb143-9"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb143-9" aria-hidden="true" tabindex="-1"></a>[<span class="dv">13</span>] <span class="st">"Lrnr_mean"</span>                 <span class="st">"Lrnr_multivariate"</span>        </span>
+<span id="cb143-10"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb143-10" aria-hidden="true" tabindex="-1"></a>[<span class="dv">15</span>] <span class="st">"Lrnr_nnet"</span>                 <span class="st">"Lrnr_optim"</span>               </span>
+<span id="cb143-11"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb143-11" aria-hidden="true" tabindex="-1"></a>[<span class="dv">17</span>] <span class="st">"Lrnr_polspline"</span>            <span class="st">"Lrnr_pooled_hazards"</span>      </span>
+<span id="cb143-12"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb143-12" aria-hidden="true" tabindex="-1"></a>[<span class="dv">19</span>] <span class="st">"Lrnr_randomForest"</span>         <span class="st">"Lrnr_ranger"</span>              </span>
+<span id="cb143-13"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb143-13" aria-hidden="true" tabindex="-1"></a>[<span class="dv">21</span>] <span class="st">"Lrnr_rpart"</span>                <span class="st">"Lrnr_screener_correlation"</span></span>
+<span id="cb143-14"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb143-14" aria-hidden="true" tabindex="-1"></a>[<span class="dv">23</span>] <span class="st">"Lrnr_solnp"</span>                <span class="st">"Lrnr_svm"</span>                 </span>
+<span id="cb143-15"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb143-15" aria-hidden="true" tabindex="-1"></a>[<span class="dv">25</span>] <span class="st">"Lrnr_xgboost"</span>             </span></code></pre></div>
+<p>Since the corresponding blip will be vector valued, we will have a
+column for each additional level of treatment. As such, we need to create
+multivariate learners with the helper function <code>create_mv_learners</code> that takes a
+list of initialized learners as input.</p>
+<p>We make the above explicit with respect to the standard notation by bundling the
+ensemble learners into a list object below:</p>
+<div class="sourceCode" id="cb144"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># specify outcome and treatment regressions and create learner list</span>
+<span class="va">learner_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Q_learner</span>, A <span class="op">=</span> <span class="va">g_learner</span>, B <span class="op">=</span> <span class="va">b_learner</span><span class="op">)</span></code></pre></div>
+</div>
+<div id="oit-eval-cat-v1" class="section level3" number="8.7.3">
+<h3>
+<span class="header-section-number">8.7.3</span> Targeted Estimation of the Mean under the Optimal Individualized Interventions Effects<a class="anchor" aria-label="anchor" href="#oit-eval-cat-v1"><i class="fas fa-link"></i></a>
+</h3>
+<div class="sourceCode" id="cb145"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># initialize a tmle specification</span>
+<span class="va">tmle_spec_cat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tmle3mopttx/man/tmle3_mopttx_blip_revere.html">tmle3_mopttx_blip_revere</a></span><span class="op">(</span>
+  V <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"W1"</span>, <span class="st">"W2"</span>, <span class="st">"W3"</span>, <span class="st">"W4"</span><span class="op">)</span>, type <span class="op">=</span> <span class="st">"blip2"</span>,
+  learners <span class="op">=</span> <span class="va">learner_list</span>, maximize <span class="op">=</span> <span class="cn">TRUE</span>, complex <span class="op">=</span> <span class="cn">TRUE</span>,
+  realistic <span class="op">=</span> <span class="cn">FALSE</span>
+<span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb146"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb146-1"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb146-1" aria-hidden="true" tabindex="-1"></a><span class="co"># fit the TML estimator</span></span>
+<span id="cb146-2"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb146-2" aria-hidden="true" tabindex="-1"></a>fit_cat <span class="ot">&lt;-</span> <span class="fu">tmle3</span>(tmle_spec_cat, data, node_list, learner_list)</span>
+<span id="cb146-3"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb146-3" aria-hidden="true" tabindex="-1"></a>fit_cat</span>
+<span id="cb146-4"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb146-4" aria-hidden="true" tabindex="-1"></a>A tmle3_Fit that took <span class="dv">1</span> <span class="fu">step</span>(s)</span>
+<span id="cb146-5"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb146-5" aria-hidden="true" tabindex="-1"></a>   type         param init_est tmle_est      se  lower  upper psi_transformed</span>
+<span id="cb146-6"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb146-6" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>  TSM E[Y_{A<span class="ot">=</span><span class="cn">NULL</span>}]   <span class="fl">0.5347</span>   <span class="fl">0.6213</span> <span class="fl">0.06628</span> <span class="fl">0.4914</span> <span class="fl">0.7512</span>          <span class="fl">0.6213</span></span>
+<span id="cb146-7"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb146-7" aria-hidden="true" tabindex="-1"></a>   lower_transformed upper_transformed</span>
+<span id="cb146-8"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb146-8" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>            <span class="fl">0.4914</span>            <span class="fl">0.7512</span></span>
+<span id="cb146-9"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb146-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb146-10"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb146-10" aria-hidden="true" tabindex="-1"></a><span class="co"># How many individuals got assigned each treatment?</span></span>
+<span id="cb146-11"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb146-11" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(tmle_spec_cat<span class="sc">$</span>return_rule)</span>
+<span id="cb146-12"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb146-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb146-13"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb146-13" aria-hidden="true" tabindex="-1"></a>  <span class="dv">1</span>   <span class="dv">2</span>   <span class="dv">3</span> </span>
+<span id="cb146-14"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb146-14" aria-hidden="true" tabindex="-1"></a><span class="dv">249</span> <span class="dv">432</span> <span class="dv">319</span> </span></code></pre></div>
+<p>We can see that the confidence interval covers the truth.</p>
+<p><strong>NOTICE the distribution of the assigned treatment! We will need this shortly.</strong></p>
+</div>
+</div>
+<div id="extensions-to-causal-effect-of-an-oit" class="section level2" number="8.8">
+<h2>
+<span class="header-section-number">8.8</span> Extensions to Causal Effect of an OIT<a class="anchor" aria-label="anchor" href="#extensions-to-causal-effect-of-an-oit"><i class="fas fa-link"></i></a>
+</h2>
+<p>In this section, we consider two extensions to the procedure described for
+estimating the value of the OIT. First one considers a setting where the user
+might be interested in a grid of possible sub-optimal rules, corresponding to
+potentially limited knowledge of potential effect modifiers. The second
+extension concerns implementation of a realistic optimal individual
+interventions where certain regimes might be preferred, but due to practical or
+global positivity restraints, are not realistic to implement.</p>
+<div id="oit-eval-cat-v2" class="section level3" number="8.8.1">
+<h3>
+<span class="header-section-number">8.8.1</span> Simpler Rules<a class="anchor" aria-label="anchor" href="#oit-eval-cat-v2"><i class="fas fa-link"></i></a>
+</h3>
+<p>In order to not only consider the most ambitious fully <span class="math inline">\(V\)</span>-optimal rule, we
+define <span class="math inline">\(S\)</span>-optimal rules as the optimal rule that considers all possible subsets
+of <span class="math inline">\(V\)</span> covariates, with card(<span class="math inline">\(S\)</span>) <span class="math inline">\(\leq\)</span> card(<span class="math inline">\(V\)</span>) and <span class="math inline">\(\emptyset \in S\)</span>. In
+particular, this allows us to define a Super Learner for <span class="math inline">\(d_0\)</span> that includes
+a range of estimators from very simple (e.g., statis rules) to more complex
+(e.g. full <span class="math inline">\(V\)</span>), and let the discrete Super Learner select a simple rule when
+appropriate. This allows us to consider sub-optimal rules that are easier to estimate and
+potentially provide more realistic rules. Within the <code>tmle3mopttx</code> paradigm, we just need
+to change the <code>complex</code> parameter to <code>FALSE</code>:</p>
+<div class="sourceCode" id="cb147"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># initialize a tmle specification</span>
+<span class="va">tmle_spec_cat_simple</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tmle3mopttx/man/tmle3_mopttx_blip_revere.html">tmle3_mopttx_blip_revere</a></span><span class="op">(</span>
+  V <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"W4"</span>, <span class="st">"W3"</span>, <span class="st">"W2"</span>, <span class="st">"W1"</span><span class="op">)</span>, type <span class="op">=</span> <span class="st">"blip2"</span>,
+  learners <span class="op">=</span> <span class="va">learner_list</span>,
+  maximize <span class="op">=</span> <span class="cn">TRUE</span>, complex <span class="op">=</span> <span class="cn">FALSE</span>, realistic <span class="op">=</span> <span class="cn">FALSE</span>
+<span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb148"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb148-1"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb148-1" aria-hidden="true" tabindex="-1"></a><span class="co"># fit the TML estimator</span></span>
+<span id="cb148-2"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb148-2" aria-hidden="true" tabindex="-1"></a>fit_cat_simple <span class="ot">&lt;-</span> <span class="fu">tmle3</span>(tmle_spec_cat_simple, data, node_list, learner_list)</span>
+<span id="cb148-3"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb148-3" aria-hidden="true" tabindex="-1"></a>fit_cat_simple</span>
+<span id="cb148-4"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb148-4" aria-hidden="true" tabindex="-1"></a>A tmle3_Fit that took <span class="dv">1</span> <span class="fu">step</span>(s)</span>
+<span id="cb148-5"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb148-5" aria-hidden="true" tabindex="-1"></a>   type                   param init_est tmle_est      se  lower  upper</span>
+<span id="cb148-6"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb148-6" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>  TSM E[Y_{<span class="fu">d</span>(<span class="at">V=</span>W4,W3,W2,W1)}]   <span class="fl">0.5301</span>   <span class="fl">0.5497</span> <span class="fl">0.05822</span> <span class="fl">0.4356</span> <span class="fl">0.6638</span></span>
+<span id="cb148-7"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb148-7" aria-hidden="true" tabindex="-1"></a>   psi_transformed lower_transformed upper_transformed</span>
+<span id="cb148-8"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb148-8" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>          <span class="fl">0.5497</span>            <span class="fl">0.4356</span>            <span class="fl">0.6638</span></span></code></pre></div>
+<p>Even though we specified all baseline covariates as the basis
+for rule estimation, a simpler rule is sufficient to maximize the mean outcome.</p>
+<p><strong>QUESTION:</strong> How does the set of covariates picked by <code>tmle3mopttx</code>
+compare to the baseline covariates the true rule depends on?</p>
+</div>
+<div id="oit-eval-cat-v3" class="section level3" number="8.8.2">
+<h3>
+<span class="header-section-number">8.8.2</span> Realistic Optimal Individual Regimes<a class="anchor" aria-label="anchor" href="#oit-eval-cat-v3"><i class="fas fa-link"></i></a>
+</h3>
+<p>In addition to considering less complex rules, <code>tmle3mopttx</code> also provides an
+option to estimate the mean under the realistic, or implementable, optimal
+individualized treatment. It is often the case that assigning particular regime
+might have the ability to fully maximize (or minimize) the desired outcome, but
+due to global or practical positivity constrains, such treatment can never be
+implemented in real life (or is highly unlikely). As such, specifying
+<code>realistic</code> to <code>TRUE</code>, we consider possibly suboptimal treatments that optimize
+the outcome in question while being supported by the data.</p>
+<div class="sourceCode" id="cb149"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># initialize a tmle specification</span>
+<span class="va">tmle_spec_cat_realistic</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tmle3mopttx/man/tmle3_mopttx_blip_revere.html">tmle3_mopttx_blip_revere</a></span><span class="op">(</span>
+  V <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"W4"</span>, <span class="st">"W3"</span>, <span class="st">"W2"</span>, <span class="st">"W1"</span><span class="op">)</span>, type <span class="op">=</span> <span class="st">"blip2"</span>,
+  learners <span class="op">=</span> <span class="va">learner_list</span>,
+  maximize <span class="op">=</span> <span class="cn">TRUE</span>, complex <span class="op">=</span> <span class="cn">TRUE</span>, realistic <span class="op">=</span> <span class="cn">TRUE</span>
+<span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb150"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb150-1"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb150-1" aria-hidden="true" tabindex="-1"></a><span class="co"># fit the TML estimator</span></span>
+<span id="cb150-2"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb150-2" aria-hidden="true" tabindex="-1"></a>fit_cat_realistic <span class="ot">&lt;-</span> <span class="fu">tmle3</span>(tmle_spec_cat_realistic, data, node_list, learner_list)</span>
+<span id="cb150-3"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb150-3" aria-hidden="true" tabindex="-1"></a>fit_cat_realistic</span>
+<span id="cb150-4"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb150-4" aria-hidden="true" tabindex="-1"></a>A tmle3_Fit that took <span class="dv">1</span> <span class="fu">step</span>(s)</span>
+<span id="cb150-5"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb150-5" aria-hidden="true" tabindex="-1"></a>   type         param init_est tmle_est      se  lower upper psi_transformed</span>
+<span id="cb150-6"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb150-6" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>  TSM E[Y_{A<span class="ot">=</span><span class="cn">NULL</span>}]   <span class="fl">0.5377</span>   <span class="fl">0.6582</span> <span class="fl">0.02135</span> <span class="fl">0.6163</span>   <span class="fl">0.7</span>          <span class="fl">0.6582</span></span>
+<span id="cb150-7"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb150-7" aria-hidden="true" tabindex="-1"></a>   lower_transformed upper_transformed</span>
+<span id="cb150-8"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb150-8" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>            <span class="fl">0.6163</span>               <span class="fl">0.7</span></span>
+<span id="cb150-9"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb150-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb150-10"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb150-10" aria-hidden="true" tabindex="-1"></a><span class="co"># How many individuals got assigned each treatment?</span></span>
+<span id="cb150-11"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb150-11" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(tmle_spec_cat_realistic<span class="sc">$</span>return_rule)</span>
+<span id="cb150-12"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb150-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb150-13"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb150-13" aria-hidden="true" tabindex="-1"></a>  <span class="dv">2</span>   <span class="dv">3</span> </span>
+<span id="cb150-14"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb150-14" aria-hidden="true" tabindex="-1"></a><span class="dv">506</span> <span class="dv">494</span> </span></code></pre></div>
+<p><strong>QUESTION:</strong> Referring back to the data-generating distribution, why do you
+think the distribution of allocated treatment changed from the distribution
+we had under the “non-realistic”” rule?</p>
+</div>
+<div id="missingness-and-tmle3mopttx" class="section level3" number="8.8.3">
+<h3>
+<span class="header-section-number">8.8.3</span> Missingness and <code>tmle3mopttx</code><a class="anchor" aria-label="anchor" href="#missingness-and-tmle3mopttx"><i class="fas fa-link"></i></a>
+</h3>
+<p>In this section, we present how to use the <code>tmle3mopttx</code> package when the data is subject
+to missingness in <span class="math inline">\(Y\)</span>. Let’s start by add some missingness to our outcome, first.</p>
+<div class="sourceCode" id="cb151"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb151-1"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb151-1" aria-hidden="true" tabindex="-1"></a>data_missing <span class="ot">&lt;-</span> data_cat_realistic</span>
+<span id="cb151-2"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb151-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb151-3"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb151-3" aria-hidden="true" tabindex="-1"></a><span class="co">#Add some random missingless:</span></span>
+<span id="cb151-4"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb151-4" aria-hidden="true" tabindex="-1"></a>rr <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">nrow</span>(data_missing), <span class="dv">100</span>, <span class="at">replace =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb151-5"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb151-5" aria-hidden="true" tabindex="-1"></a>data_missing[rr,<span class="st">"Y"</span>]<span class="ot">&lt;-</span><span class="cn">NA</span></span>
+<span id="cb151-6"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb151-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb151-7"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb151-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(data_missing<span class="sc">$</span>Y)</span>
+<span id="cb151-8"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb151-8" aria-hidden="true" tabindex="-1"></a>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA<span class="st">'s </span></span>
+<span id="cb151-9"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb151-9" aria-hidden="true" tabindex="-1"></a><span class="st">   0.00    0.00    0.00    0.46    1.00    1.00     100 </span></span></code></pre></div>
+<p>To start, we must first add to our library — we now also need to estimate the
+missigness process as well.</p>
+<div class="sourceCode" id="cb152"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">delta_learner</span> <span class="op">&lt;-</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_sl.html">Lrnr_sl</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>
+  learners <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="va">lrn_mean</span>, <span class="va">lrn_glm</span><span class="op">)</span>,
+  metalearner <span class="op">=</span> <span class="va"><a href="https://tlverse.org/sl3/reference/Lrnr_nnls.html">Lrnr_nnls</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span>
+<span class="op">)</span>
+
+<span class="co"># specify outcome and treatment regressions and create learner list</span>
+<span class="va">learner_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span>Y <span class="op">=</span> <span class="va">Q_learner</span>, A <span class="op">=</span> <span class="va">g_learner</span>, B <span class="op">=</span> <span class="va">b_learner</span>, delta_Y<span class="op">=</span><span class="va">delta_learner</span><span class="op">)</span></code></pre></div>
+<p>The <code>learner_list</code> object above specifies the role that each of the ensemble
+learners we’ve generated is to play in computing the initial estimators needed
+for building the TMLE for the parameter of interest. In particular, it makes
+explicit the fact that <code>Y</code> is used in fitting the outcome regression
+while <code>A</code> is used in fitting our treatment mechanism regression,
+<code>B</code> for fitting the blip function, and <code>delta_Y</code> fits the missing outcome process.</p>
+<p>Now, with the additional estimation step associated with missingness added, we can
+proceed as usual.</p>
+<div class="sourceCode" id="cb153"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># initialize a tmle specification</span>
+<span class="va">tmle_spec_cat_miss</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tmle3mopttx/man/tmle3_mopttx_blip_revere.html">tmle3_mopttx_blip_revere</a></span><span class="op">(</span>
+  V <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"W1"</span>, <span class="st">"W2"</span>, <span class="st">"W3"</span>, <span class="st">"W4"</span><span class="op">)</span>, type <span class="op">=</span> <span class="st">"blip2"</span>,
+  learners <span class="op">=</span> <span class="va">learner_list</span>, maximize <span class="op">=</span> <span class="cn">TRUE</span>, complex <span class="op">=</span> <span class="cn">TRUE</span>,
+  realistic <span class="op">=</span> <span class="cn">FALSE</span>
+<span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb154"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># fit the TML estimator</span>
+<span class="va">fit_cat_miss</span> <span class="op">&lt;-</span> <span class="fu"><a href="http://tlverse.org/tmle3/reference/tmle3.html">tmle3</a></span><span class="op">(</span><span class="va">tmle_spec_cat_miss</span>, <span class="va">data_missing</span>, <span class="va">node_list</span>, <span class="va">learner_list</span><span class="op">)</span>
+<span class="va">fit_cat_miss</span></code></pre></div>
+</div>
+<div id="q-learning" class="section level3" number="8.8.4">
+<h3>
+<span class="header-section-number">8.8.4</span> Q-learning<a class="anchor" aria-label="anchor" href="#q-learning"><i class="fas fa-link"></i></a>
+</h3>
+<p>Alternatively, we could estimate the mean under the optimal individualized
+treatment using Q-learning. The optimal rule can be learned through fitting the
+likelihood, and consequently estimating the optimal rule under this fit of the
+likelihood <span class="citation">(<a href="references.html#ref-murphy2003" role="doc-biblioref">Murphy, 2003</a>; <a href="references.html#ref-Sutton1998" role="doc-biblioref">Sutton <em>et al.</em>, 1998</a>)</span>.</p>
+<p>Below we outline how to use <code>tmle3mopttx</code> package in order to estimate the mean
+under the ITR using Q-learning. As demonstrated in the previous sections, we
+first need to initialize a specification for the TMLE of our parameter of
+interest. As opposed to the previous section however, we will now use
+<code>tmle3_mopttx_Q</code> instead of <code>tmle3_mopttx_blip_revere</code> in order to indicate that
+we want to use Q-learning instead of TMLE.</p>
+<div class="sourceCode" id="cb155"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># initialize a tmle specification</span>
+<span class="va">tmle_spec_Q</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tmle3mopttx/man/tmle3_mopttx_Q.html">tmle3_mopttx_Q</a></span><span class="op">(</span>maximize <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
+
+<span class="co"># Define data:</span>
+<span class="va">tmle_task</span> <span class="op">&lt;-</span> <span class="va">tmle_spec_Q</span><span class="op">$</span><span class="fu">make_tmle_task</span><span class="op">(</span><span class="va">data</span>, <span class="va">node_list</span><span class="op">)</span>
+
+<span class="co"># Define likelihood:</span>
+<span class="va">initial_likelihood</span> <span class="op">&lt;-</span> <span class="va">tmle_spec_Q</span><span class="op">$</span><span class="fu">make_initial_likelihood</span><span class="op">(</span>
+  <span class="va">tmle_task</span>,
+  <span class="va">learner_list</span>
+<span class="op">)</span>
+
+<span class="co"># Estimate the parameter:</span>
+<span class="fu"><a href="https://rdrr.io/pkg/tmle3mopttx/man/Q_learning.html">Q_learning</a></span><span class="op">(</span><span class="va">tmle_spec_Q</span>, <span class="va">initial_likelihood</span>, <span class="va">tmle_task</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span></code></pre></div>
+</div>
+</div>
+<div id="variable-importance-analysis-with-oit" class="section level2" number="8.9">
+<h2>
+<span class="header-section-number">8.9</span> Variable Importance Analysis with OIT<a class="anchor" aria-label="anchor" href="#variable-importance-analysis-with-oit"><i class="fas fa-link"></i></a>
+</h2>
+<p>Suppose one wishes to assess the importance of each observed covariate, in
+terms of maximizing (or minimizing) the population mean of an outcome under an
+optimal individualized treatment regime. In particular, a covariate that
+maximizes (or minimizes) the population mean outcome the most under an optimal
+individualized treatment out of all other considered covariates under optimal
+assignment might be considered <em>more important</em> for the outcome. To put it in
+context, perhaps optimal allocation of treatment 1, denoted <span class="math inline">\(A_1\)</span>, results in a
+larger mean outcome than optimal allocation of another treatment 2, denoted <span class="math inline">\(A_2\)</span>.
+Therefore, we would label <span class="math inline">\(A_1\)</span> as having a higher variable importance with
+regard to maximizing (or minimizing) the mean outcome under the optimal
+individualized treatment.</p>
+<div id="simulated-data-2" class="section level3" number="8.9.1">
+<h3>
+<span class="header-section-number">8.9.1</span> Simulated Data<a class="anchor" aria-label="anchor" href="#simulated-data-2"><i class="fas fa-link"></i></a>
+</h3>
+<p>For illustration purpose, we bin baseline covariates corresponding to
+the data-generating distribution <a href="#oit-eval">described previously</a>:</p>
+<div class="sourceCode" id="cb156"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># bin baseline covariates to 3 categories:</span>
+<span class="va">data</span><span class="op">$</span><span class="va">W1</span><span class="op">&lt;-</span><span class="fu"><a href="https://Rdatatable.gitlab.io/data.table/reference/fifelse.html">ifelse</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">W1</span><span class="op">&lt;</span><span class="fu"><a href="https://rdrr.io/r/stats/quantile.html">quantile</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">W1</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>,<span class="fl">1</span>,<span class="fu"><a href="https://Rdatatable.gitlab.io/data.table/reference/fifelse.html">ifelse</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">W1</span><span class="op">&lt;</span><span class="fu"><a href="https://rdrr.io/r/stats/quantile.html">quantile</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">W1</span><span class="op">)</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span>,<span class="fl">2</span>,<span class="fl">3</span><span class="op">)</span><span class="op">)</span>
+
+<span class="va">node_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span>
+  W <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"W3"</span>, <span class="st">"W4"</span>, <span class="st">"W2"</span><span class="op">)</span>,
+  A <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"W1"</span>, <span class="st">"A"</span><span class="op">)</span>,
+  Y <span class="op">=</span> <span class="st">"Y"</span>
+<span class="op">)</span></code></pre></div>
+<p>Our node list now includes <span class="math inline">\(W_1\)</span> as treatments as well! Don’t worry,
+we will still properly adjust for all baseline covariates.</p>
+</div>
+<div id="variable-importance-using-targeted-estimation-of-the-value-of-the-itr" class="section level3" number="8.9.2">
+<h3>
+<span class="header-section-number">8.9.2</span> Variable Importance using Targeted Estimation of the value of the ITR<a class="anchor" aria-label="anchor" href="#variable-importance-using-targeted-estimation-of-the-value-of-the-itr"><i class="fas fa-link"></i></a>
+</h3>
+<p>In the previous sections we have seen how to obtain a contrast between the mean
+under the optimal individualized rule and the mean under the observed outcome
+for a single covariate — we are now ready to run the variable importance analysis
+for all of our specified covariates. In order to run the variable importance
+analysis, we first need to initialize a specification for the TMLE of our
+parameter of interest as we have done before. In addition, we need to specify
+the data and the corresponding list of nodes, as well as the appropriate
+learners for the outcome regression, propensity score, and the blip function.
+Finally, we need to specify whether we should adjust for all the other
+covariates we are assessing variable importance for. We will adjust for all <span class="math inline">\(W\)</span>s
+in our analysis, and if <code>adjust_for_other_A=TRUE</code>, also for all <span class="math inline">\(A\)</span> covariates
+that are not treated as exposure in the variable importance loop.</p>
+<p>To start, we will initialize a specification for the TMLE of our parameter of
+interest (called a <code>tmle3_Spec</code> in the <code>tlverse</code> nomenclature) simply by calling
+<code>tmle3_mopttx_vim</code>. First, we indicate the method used for learning the optimal
+individualized treatment by specifying the <code>method</code> argument of
+<code>tmle3_mopttx_vim</code>. If <code>method="Q"</code>, then we will be using Q-learning for rule
+estimation, and we do not need to specify <code>V</code>, <code>type</code> and <code>learners</code> arguments
+in the spec, since they are not important for Q-learning. However, if
+<code>method="SL"</code>, which corresponds to learning the optimal individualized
+treatment using the above outlined methodology, then we need to specify the type
+of (pseudo) blip we will use in this estimation problem, whether we want to
+maximize or minimize the outcome, complex and realistic rules, resource constraint.
+Finally, for <code>method="SL"</code> we also need to communicate that we’re interested in learning a
+rule dependent on <code>V</code> covariates by specifying the <code>V</code> argument. For both
+<code>method="Q"</code> and <code>method="SL"</code>, we need to indicate whether we want to maximize
+or minimize the mean under the optimal individualized rule. Finally, we also
+need to specify whether the final comparison of the mean under the optimal
+individualized rule and the mean under the observed outcome should be on the
+multiplicative scale (risk ratio) or linear (similar to average treatment
+effect).</p>
+<div class="sourceCode" id="cb157"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># initialize a tmle specification</span>
+<span class="va">tmle_spec_vim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tmle3mopttx/man/tmle3_mopttx_vim.html">tmle3_mopttx_vim</a></span><span class="op">(</span>
+  V<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"W2"</span><span class="op">)</span>,
+  type <span class="op">=</span> <span class="st">"blip2"</span>,
+  learners <span class="op">=</span> <span class="va">learner_list</span>,
+  maximize <span class="op">=</span> <span class="cn">FALSE</span>,
+  method <span class="op">=</span> <span class="st">"SL"</span>,
+  complex <span class="op">=</span> <span class="cn">TRUE</span>,
+  realistic <span class="op">=</span> <span class="cn">FALSE</span>
+<span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb158"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb158-1"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb158-1" aria-hidden="true" tabindex="-1"></a><span class="co"># fit the TML estimator</span></span>
+<span id="cb158-2"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb158-2" aria-hidden="true" tabindex="-1"></a>vim_results <span class="ot">&lt;-</span> <span class="fu">tmle3_vim</span>(tmle_spec_vim, data, node_list, learner_list,</span>
+<span id="cb158-3"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb158-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">adjust_for_other_A =</span> <span class="cn">TRUE</span></span>
+<span id="cb158-4"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb158-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb158-5"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb158-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb158-6"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb158-6" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(vim_results)</span>
+<span id="cb158-7"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb158-7" aria-hidden="true" tabindex="-1"></a>   type                param  init_est tmle_est      se    lower    upper</span>
+<span id="cb158-8"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb158-8" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>  ATE E[Y_{A<span class="ot">=</span><span class="cn">NULL</span>}] <span class="sc">-</span> E[Y] <span class="sc">-</span><span class="fl">0.013019</span> <span class="sc">-</span><span class="fl">0.06474</span> <span class="fl">0.02171</span> <span class="sc">-</span><span class="fl">0.10730</span> <span class="sc">-</span><span class="fl">0.02218</span></span>
+<span id="cb158-9"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb158-9" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span><span class="sc">:</span>  ATE E[Y_{A<span class="ot">=</span><span class="cn">NULL</span>}] <span class="sc">-</span> E[Y]  <span class="fl">0.000332</span>  <span class="fl">0.05371</span> <span class="fl">0.01688</span>  <span class="fl">0.02062</span>  <span class="fl">0.08679</span></span>
+<span id="cb158-10"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb158-10" aria-hidden="true" tabindex="-1"></a>   psi_transformed lower_transformed upper_transformed  A           W Z_stat</span>
+<span id="cb158-11"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb158-11" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span>        <span class="sc">-</span><span class="fl">0.06474</span>          <span class="sc">-</span><span class="fl">0.10730</span>          <span class="sc">-</span><span class="fl">0.02218</span> W1  W3,W4,W2,A <span class="sc">-</span><span class="fl">2.982</span></span>
+<span id="cb158-12"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb158-12" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span><span class="sc">:</span>         <span class="fl">0.05371</span>           <span class="fl">0.02062</span>           <span class="fl">0.08679</span>  A W3,W4,W2,W1  <span class="fl">3.182</span></span>
+<span id="cb158-13"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb158-13" aria-hidden="true" tabindex="-1"></a>        p_nz p_nz_corrected</span>
+<span id="cb158-14"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb158-14" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span><span class="sc">:</span> <span class="fl">0.0014338</span>       <span class="fl">0.001434</span></span>
+<span id="cb158-15"><a href="dynamic-and-optimal-individualized-treatment-regimes.html#cb158-15" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span><span class="sc">:</span> <span class="fl">0.0007326</span>       <span class="fl">0.001434</span></span></code></pre></div>
+<p>The final result of <code>tmle3_vim</code> with the <code>tmle3mopttx</code> spec is an ordered list
+of mean outcomes under the optimal individualized treatment for all categorical
+covariates in our dataset.</p>
+<hr>
+</div>
+</div>
+<div id="exercises-3" class="section level2" number="8.10">
+<h2>
+<span class="header-section-number">8.10</span> Exercises<a class="anchor" aria-label="anchor" href="#exercises-3"><i class="fas fa-link"></i></a>
+</h2>
+<div id="real-world-data-and-tmle3mopttx" class="section level3" number="8.10.1">
+<h3>
+<span class="header-section-number">8.10.1</span> Real World Data and <code>tmle3mopttx</code><a class="anchor" aria-label="anchor" href="#real-world-data-and-tmle3mopttx"><i class="fas fa-link"></i></a>
+</h3>
+<p>Finally, we cement everything we learned so far with a real data application.</p>
+<p>As in the previous sections, we will be using the WASH Benefits data,
+corresponding to the effect of water quality, sanitation, hand washing, and
+nutritional interventions on child development in rural Bangladesh.</p>
+<p>The main aim of the cluster-randomized controlled trial was to assess the
+impact of six intervention groups, including:</p>
+<ol style="list-style-type: decimal">
+<li><p>control;</p></li>
+<li><p>hand-washing with soap;</p></li>
+<li><p>improved nutrition through counseling and provision of lipid-based nutrient
+supplements;</p></li>
+<li><p>combined water, sanitation, hand-washing, and nutrition;</p></li>
+<li><p>improved sanitation;</p></li>
+<li><p>combined water, sanitation, and hand-washing;</p></li>
+<li><p>chlorinated drinking water.</p></li>
+</ol>
+<p>We aim to estimate the optimal ITR and the corresponding value under the optimal
+ITR for the main intervention in WASH Benefits data.</p>
+<p>Our outcome of interest is the weight-for-height Z-score, whereas our primary
+treatment is the six intervention groups aimed at improving living conditions.</p>
+<p>Questions:</p>
+<ol style="list-style-type: decimal">
+<li><p>Define <span class="math inline">\(V\)</span> as mother’s education (<code>momedu</code>), current living conditions (<code>floor</code>),
+and possession of material items including the refrigerator (<code>asset_refrig</code>).
+Why do you think we use these covariates as <span class="math inline">\(V\)</span>? Do we want to minimize or
+maximize the outcome? Which (pseudo) blip type should we use?</p></li>
+<li><p>Load the WASH Benefits data, and define the appropriate nodes for treatment
+and outcome. Use all the rest of the covariates as <span class="math inline">\(W\)</span> except for
+<code>momheight</code> for now. Construct an appropriate <code>sl3</code> library for <span class="math inline">\(A\)</span>, <span class="math inline">\(Y\)</span> and
+<span class="math inline">\(B\)</span>.</p></li>
+<li><p>Based on the <span class="math inline">\(V\)</span> defined in the previous question, estimate the mean under
+the ITR for the main randomized intervention used in the WASH Benefits trial
+with weight-for-height Z-score as the outcome. What’s the TMLE value of the
+optimal ITR? How does it change from the initial estimate? Which
+intervention is the most prominent? Why do you think that is?</p></li>
+<li><p>Using the same formulation as in questions 1 and 2, estimate the realistic
+optimal ITR and the corresponding value of the realistic ITR. Did the results
+change? Which intervention is the most prominent under realistic rules? Why do
+you think that is?</p></li>
+<li><p>Consider simpler rules for the WASH benefits data example. Which covariates does the
+final rule depend on?</p></li>
+<li><p>Change the treatment to a binary variable (<code>asset_sewmach</code>), and estimate the
+value under the ITR in this setting under a <span class="math inline">\(60\%\)</span> resource constraint. What
+do the results indicate?</p></li>
+<li><p>Change the treatment once again, now to mother’s education (<code>momedu</code>), and
+estimate the value under the ITR in this setting. What do the results
+indicate? Can we intervene on such a variable?</p></li>
+</ol>
+</div>
+<div id="review-of-key-concepts-1" class="section level3" number="8.10.2">
+<h3>
+<span class="header-section-number">8.10.2</span> Review of Key Concepts<a class="anchor" aria-label="anchor" href="#review-of-key-concepts-1"><i class="fas fa-link"></i></a>
+</h3>
+<ol style="list-style-type: decimal">
+<li><p>What is the difference between dynamic and optimal individualized regimes?</p></li>
+<li><p>What’s the intuition behind using different blip types? Why did we switch
+from <code>blip1</code> to <code>blip2</code> when considering categorical treatment? What are some
+of the advantages of each?</p></li>
+<li><p>Look back at the results generated in the <a href="dynamic-and-optimal-individualized-treatment-regimes.html#oit-eval-cat-v1">section on categorical
+treatments</a>, and compare them to the mean under the optimal
+individualized treatment in the <a href="#oit-eval-bin-v2">section on complex categorical
+treatments</a>. How does the set of covariates picked by <code>tmle3mopttx</code>
+compare to the baseline covariates the true rule depends on?</p></li>
+<li><p>Compare the distribution of treatments assigned under the true optimal
+individualized treatment and realistic optimal individualized treatment.
+Referring back to the data-generating distribution, why do you think the
+distribution of allocated treatment changed?</p></li>
+<li><p>Using the same simulation, perform a variable importance analysis using
+Q-learning. How do the results change and why?</p></li>
+</ol>
+</div>
+<div id="advanced-topics-1" class="section level3" number="8.10.3">
+<h3>
+<span class="header-section-number">8.10.3</span> Advanced Topics<a class="anchor" aria-label="anchor" href="#advanced-topics-1"><i class="fas fa-link"></i></a>
+</h3>
+<ol style="list-style-type: decimal">
+<li><p>How can we extend the current approach to include exceptional laws?</p></li>
+<li><p>How can we extend the current approach to continuous interventions?</p></li>
+</ol>
+<!--
+## Appendix
+
+### Exercise solutions
+-->
+</div>
+</div>
+</div>
+  <div class="chapter-nav">
+<div class="prev"><a href="tmle3.html"><span class="header-section-number">7</span> The TMLE Framework</a></div>
+<div class="next"><a href="shift.html"><span class="header-section-number">9</span> Stochastic Treatment Regimes</a></div>
+</div></main><div class="col-md-3 col-lg-2 d-none d-md-block sidebar sidebar-chapter">
+    <nav id="toc" data-toggle="toc" aria-label="On this page"><h2>On this page</h2>
+      <ul class="nav navbar-nav">
+<li><a class="nav-link" href="#dynamic-and-optimal-individualized-treatment-regimes"><span class="header-section-number">8</span> Dynamic and Optimal Individualized Treatment Regimes</a></li>
+<li><a class="nav-link" href="#learning-objectives-2"><span class="header-section-number">8.1</span> Learning Objectives</a></li>
+<li><a class="nav-link" href="#introduction-to-optimal-individualized-interventions"><span class="header-section-number">8.2</span> Introduction to Optimal Individualized Interventions</a></li>
+<li><a class="nav-link" href="#data-structure-and-notation"><span class="header-section-number">8.3</span> Data Structure and Notation</a></li>
+<li>
+<a class="nav-link" href="#defining-the-causal-effect-of-an-optimal-individualized-intervention"><span class="header-section-number">8.4</span> Defining the Causal Effect of an Optimal Individualized Intervention</a><ul class="nav navbar-nav">
+<li><a class="nav-link" href="#identification-and-statistical-estimand"><span class="header-section-number">8.4.1</span> Identification and Statistical Estimand</a></li>
+<li><a class="nav-link" href="#binary-treatment"><span class="header-section-number">8.4.2</span> Binary treatment</a></li>
+<li><a class="nav-link" href="#categorical-treatment"><span class="header-section-number">8.4.3</span> Categorical treatment</a></li>
+<li><a class="nav-link" href="#technical-note-inference-and-data-adaptive-parameter"><span class="header-section-number">8.4.4</span> Technical Note: Inference and data-adaptive parameter</a></li>
+<li><a class="nav-link" href="#technical-note-why-cv-tmle"><span class="header-section-number">8.4.5</span> Technical Note: Why CV-TMLE?</a></li>
+</ul>
+</li>
+<li><a class="nav-link" href="#interpreting-the-causal-effect-of-an-optimal-individualized-intervention"><span class="header-section-number">8.5</span> Interpreting the Causal Effect of an Optimal Individualized Intervention</a></li>
+<li>
+<a class="nav-link" href="#oit-eval-bin"><span class="header-section-number">8.6</span> Evaluating the Causal Effect of an OIT with Binary Treatment</a><ul class="nav navbar-nav">
+<li><a class="nav-link" href="#simulated-data"><span class="header-section-number">8.6.1</span> Simulated Data</a></li>
+<li><a class="nav-link" href="#constructing-optimal-stacked-regressions-with-sl3"><span class="header-section-number">8.6.2</span> Constructing Optimal Stacked Regressions with sl3</a></li>
+<li><a class="nav-link" href="#targeted-estimation-of-the-mean-under-the-optimal-individualized-interventions-effects"><span class="header-section-number">8.6.3</span> Targeted Estimation of the Mean under the Optimal Individualized Interventions Effects</a></li>
+</ul>
+</li>
+<li>
+<a class="nav-link" href="#oit-eval-cat"><span class="header-section-number">8.7</span> Evaluating the Causal Effect of an optimal ITR with Categorical Treatment</a><ul class="nav navbar-nav">
+<li><a class="nav-link" href="#simulated-data-1"><span class="header-section-number">8.7.1</span> Simulated Data</a></li>
+<li><a class="nav-link" href="#constructing-optimal-stacked-regressions-with-sl3-1"><span class="header-section-number">8.7.2</span> Constructing Optimal Stacked Regressions with sl3</a></li>
+<li><a class="nav-link" href="#oit-eval-cat-v1"><span class="header-section-number">8.7.3</span> Targeted Estimation of the Mean under the Optimal Individualized Interventions Effects</a></li>
+</ul>
+</li>
+<li>
+<a class="nav-link" href="#extensions-to-causal-effect-of-an-oit"><span class="header-section-number">8.8</span> Extensions to Causal Effect of an OIT</a><ul class="nav navbar-nav">
+<li><a class="nav-link" href="#oit-eval-cat-v2"><span class="header-section-number">8.8.1</span> Simpler Rules</a></li>
+<li><a class="nav-link" href="#oit-eval-cat-v3"><span class="header-section-number">8.8.2</span> Realistic Optimal Individual Regimes</a></li>
+<li><a class="nav-link" href="#missingness-and-tmle3mopttx"><span class="header-section-number">8.8.3</span> Missingness and tmle3mopttx</a></li>
+<li><a class="nav-link" href="#q-learning"><span class="header-section-number">8.8.4</span> Q-learning</a></li>
+</ul>
+</li>
+<li>
+<a class="nav-link" href="#variable-importance-analysis-with-oit"><span class="header-section-number">8.9</span> Variable Importance Analysis with OIT</a><ul class="nav navbar-nav">
+<li><a class="nav-link" href="#simulated-data-2"><span class="header-section-number">8.9.1</span> Simulated Data</a></li>
+<li><a class="nav-link" href="#variable-importance-using-targeted-estimation-of-the-value-of-the-itr"><span class="header-section-number">8.9.2</span> Variable Importance using Targeted Estimation of the value of the ITR</a></li>
+</ul>
+</li>
+<li>
+<a class="nav-link" href="#exercises-3"><span class="header-section-number">8.10</span> Exercises</a><ul class="nav navbar-nav">
+<li><a class="nav-link" href="#real-world-data-and-tmle3mopttx"><span class="header-section-number">8.10.1</span> Real World Data and tmle3mopttx</a></li>
+<li><a class="nav-link" href="#review-of-key-concepts-1"><span class="header-section-number">8.10.2</span> Review of Key Concepts</a></li>
+<li><a class="nav-link" href="#advanced-topics-1"><span class="header-section-number">8.10.3</span> Advanced Topics</a></li>
+</ul>
+</li>
+</ul>
+
+      <div class="book-extra">
+        <ul class="list-unstyled">
+<li><a id="book-source" href="https://github.com/tlverse/tlverse-handbook/blob/master/08-tmle3mopttx.Rmd">View source <i class="fab fa-github"></i></a></li>
+          <li><a id="book-edit" href="https://github.com/tlverse/tlverse-handbook/edit/master/08-tmle3mopttx.Rmd">Edit this page <i class="fab fa-github"></i></a></li>
+        </ul>
+</div>
+    </nav>
+</div>
+
+</div>
+</div> <!-- .container -->
+
+<footer class="bg-primary text-light mt-5"><div class="container"><div class="row">
+
+  <div class="col-12 col-md-6 mt-3">
+    <p>"<strong>Targeted Learning in R</strong>: Causal Data Science with the tlverse Software Ecosystem" was written by Mark van der Laan, Jeremy Coyle, Nima Hejazi, Ivana Malenica, Rachael Phillips, Alan Hubbard. It was last built on August 08, 2023.</p>
+  </div>
+
+  <div class="col-12 col-md-6 mt-3">
+    <p>This book was built by the <a class="text-light" href="https://bookdown.org">bookdown</a> R package.</p>
+  </div>
+
+</div></div>
+</footer><!-- dynamically load mathjax for compatibility with self-contained --><script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script><script type="text/x-mathjax-config">const popovers = document.querySelectorAll('a.footnote-ref[data-toggle="popover"]');
+for (let popover of popovers) {
+  const div = document.createElement('div');
+  div.setAttribute('style', 'position: absolute; top: 0, left:0; width:0, height:0, overflow: hidden; visibility: hidden;');
+  div.innerHTML = popover.getAttribute('data-content');
+
+  var has_math = div.querySelector("span.math");
+  if (has_math) {
+    document.body.appendChild(div);
+    MathJax.Hub.Queue(["Typeset", MathJax.Hub, div]);
+    MathJax.Hub.Queue(function() {
+      popover.setAttribute('data-content', div.innerHTML);
+      document.body.removeChild(div);
+    })
+  }
+}
+</script>
+</body>
+</html>
